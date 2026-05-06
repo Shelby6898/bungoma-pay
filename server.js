@@ -12,5 +12,5 @@ const writeDB = (data) => fs.writeFileSync(DB, JSON.stringify(data, null, 2));
 if (!fs.existsSync('db')) fs.mkdirSync('db');
 if (!fs.existsSync(DB)) writeDB({payments: []});
 app.get('/api/health', (req, res) => { const db = readDB(); res.json({status: 'OK', time: new Date().toISOString(), total_payments: db.payments.length}); });
-app.post('/api/pay', (req, res) => { const db = readDB(); const payment = {id: Date.now(), ...req.body, timestamp: new Date().toISOString()}; db.payments.push(payment); writeDB(db); res.json({success: true, message: 'Saved offline JSON - BARMS Gap #3 fixed', ref: 'BP' + payment.id}); });
+app.post('/api/pay', (req, res) => { const db = readDB(); const payment = {id: Date.now(), ...req.body, timestamp: new Date().toISOString()}; db.payments.push(payment); writeDB(db); res.json({success: true, message: 'Payment saved offline', ref: 'BP' + payment.id}); });
 app.listen(PORT, () => console.log(`Bungoma Pay running on port ${PORT}`));
