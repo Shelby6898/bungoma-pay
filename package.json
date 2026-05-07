@@ -20,6 +20,7 @@
   },
   "homepage": "https://github.com/Shelby6898/bungoma-pay#readme",
   "dependencies": {
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "firebase-admin": "^13.8.0"
   }
 }

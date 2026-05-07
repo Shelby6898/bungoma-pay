@@ -1,47 +1,39 @@
-const express = require('express');
-const fs = require('fs');
-const path = require('path');
-const app = express();
-const PORT = 3000;
-const DB = path.join(__dirname, 'db', 'revenue.json');
-app.use(express.static('public'));
-app.use(express.json());
-app.use((req, res, next) => { res.header('Access-Control-Allow-Origin', '*'); res.header('Access-Control-Allow-Headers', 'Content-Type'); next(); });
-const readDB = () => JSON.parse(fs.readFileSync(DB, 'utf8'));
-const writeDB = (data) => fs.writeFileSync(DB, JSON.stringify(data, null, 2));
-if (!fs.existsSync('db')) fs.mkdirSync('db');
-if (!fs.existsSync(DB)) writeDB({payments: []});
-app.get('/api/health', (req, res) => {
-  const db = readDB()
-  const payments = Array.isArray(db) ? db : db.payments || []
-  const total = payments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0)
-  res.json({ status: 'OK', total: total, count: payments.length })
+
+
+
+
+
+
+
+
+
+
+
+
+const express = require('express')
+const admin = require('firebase-admin')
+const app = express()
+app.use(express.json())
+app.use(express.static('public'))
+
+const serviceAccount = require('./firebase-key.json')
+admin.initializeApp({credential: admin.credential.cert(serviceAccount)})
+const db = admin.firestore()
+const payments = db.collection('payments')
+
+app.post('/api/pay', async (req,res) => {
+  const {amount, phone, service} = req.body
+  const ref = 'BP'+Date.now()
+  const ts = new Date().toISOString()
+  await payments.doc(ref).set({ref, amount: Number(amount), service, phone, ts})
+  res.json({success:true, ref, amount})
 })
 
-app.post('/api/pay', (req, res) => {
-  const { amount, phone, service } = req.body
-  const db = readDB()
-  const payments = Array.isArray(db) ? db : db.payments || []
-  
-  const payment = {
-    id: `BP${Date.now()}`,
-    amount: Number(amount) || 0,  // <-- Fixes undefined
-    phone: phone || 'N/A',
-    service: service || 'General',
-    time: new Date().toISOString(),
-    synced: false
-  }
-  
-  payments.push(payment)
-  
-  if (Array.isArray(db)) {
-    writeDB(payments)
-  } else {
-    db.payments = payments
-    db.total = payments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0)
-    writeDB(db)
-  }
-  
-  res.json({ success: true, ref: payment.id, amount: payment.amount })  // <-- Returns amount
+app.get('/api/health', async (req,res) => {
+  const snap = await payments.get()
+  let total = 0, count = 0
+  snap.forEach(doc => { total += doc.data().amount; count++ })
+  res.json({status:'OK', total, count})
 })
-app.listen(PORT, () => console.log(`Bungoma Pay running on port ${PORT}`));
+
+app.listen(3000, () => console.log('Bungoma Pay v1.3 Firebase running'))
