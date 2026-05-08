@@ -55,6 +55,6 @@ app.post('/api/stkpush', async (req, res) => {
     res.json({success: false, error: 'Failed to save transaction'});
   }
 });
-app.listen(3000, () => console.log('Bungoma Pay v1.4 Firebase running'))
+app.listen(3000, () => console.log('Bungoma Pay v1.5 Firebase running'))
 
 

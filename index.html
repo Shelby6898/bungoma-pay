@@ -27,7 +27,7 @@
 <body>
   <div class="header">
     <h1>Bungoma County Government</h1>
-    <p>Revenue Collection System v1.4 | Cloud Sync Enabled</p>
+    <p>Revenue Collection System v1.5 | Cloud Sync Enabled</p>
   </div>
   <div class="status-ok">● SYSTEM ONLINE | FIREBASE CONNECTED</div>
   <div class="stats">
@@ -60,7 +60,7 @@
     
 <button class="btn" id="lipaBtn">LIPA SASA</button>
   </div>
-  <div class="footer">Bungoma Pay v1.4 | Secure | Cloud-Enabled | County of Bungoma</div>
+  <div class="footer">Bungoma Pay v1.5 | Secure | Cloud-Enabled | County of Bungoma</div>
   <div class="toast" id="toast"></div>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -119,10 +119,13 @@ async function capturePlate() {
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
   canvas.getContext('2d').drawImage(video, 0, 0);
-  
   try {
-    const { data: { text } } = await Tesseract.recognize(canvas, 'eng');
-    const plateMatch = text.toUpperCase().match(/K[A-Z]{2}\s?\d{3}[A-Z]/);
+const { data: { text } } = await Tesseract.recognize(blob, 'eng', {
+  tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
+  tessedit_pageseg_mode: 6, // PSM_SINGLE_BLOCK
+  preserve_interword_spaces: 0
+});
+   const plateMatch = text.toUpperCase().match(/K[A-Z]{2}\s?\d{3}[A-Z]/);
     if (plateMatch) {
       plateInput.value = plateMatch[0].replace(/\s+/g, ' ').trim();
       showToast(`Plate found: ${plateInput.value}`);
