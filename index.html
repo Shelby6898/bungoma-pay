@@ -22,6 +22,7 @@
   .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #212529; color: white; padding: 12px 20px; border-radius: 8px; font-size: 14px; display: none; }
   .footer { text-align: center; padding: 20px; font-size: 12px; color: #6c757d; }
   </style>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 </head>
 <body>
   <div class="header">
@@ -47,7 +48,14 @@
   <option>Business License</option>
   <option>Land Rate</option>
 </select>
-<input id="plate" type="text" placeholder="Plate: KDP455N" style="display:none;margin:5px;padding:10px;width:90%;">
+<div id="plateSection" style="display:none;">
+  <button id="scanBtn" type="button" style="margin:5px;padding:12px;width:90%;background:#16a34a;color:white;border:none;border-radius:6px;font-weight:bold;">
+    📷 Scan Number Plate
+  </button>
+  <video id="camera" width="90%" style="display:none;border-radius:6px;margin:5px auto;" playsinline></video>
+  <canvas id="canvas" style="display:none;"></canvas>
+  <input id="plate" type="text" placeholder="Or type: KDP455N" style="margin:5px;padding:10px;width:90%;border:1px solid #ccc;border-radius:6px;">
+</div>
 <input id="zone" value="Bungoma Town" readonly style="margin-top:10px">
     
 <button class="btn" id="lipaBtn">LIPA SASA</button>
@@ -67,16 +75,75 @@
     document.getElementById('count').textContent = `${d.transactionCount || 0} Transactions`;
   });
 
-  function togglePlate() {
-    const service = document.getElementById('service').value;
-    const plateInput = document.getElementById('plate');
-    if (service === 'Parking') {
-      plateInput.style.display = 'block';
-    } else {
-      plateInput.style.display = 'none';
-    }
+function togglePlate() {
+  const service = document.getElementById('service').value;
+  const plateSection = document.getElementById('plateSection');
+  if (service === 'Parking') {
+    plateSection.style.display = 'block';
+  } else {
+    plateSection.style.display = 'none';
   }
-  window.togglePlate = togglePlate;
+}
+window.togglePlate = togglePlate;
+
+let cameraStream = null;
+
+async function startScan() {
+  const video = document.getElementById('camera');
+  const scanBtn = document.getElementById('scanBtn');
+  
+  if (cameraStream) return capturePlate();
+  
+  scanBtn.textContent = 'Opening camera...';
+  try {
+    cameraStream = await navigator.mediaDevices.getUserMedia({ 
+      video: { facingMode: { ideal: 'environment' } } 
+    });
+    video.srcObject = cameraStream;
+    video.style.display = 'block';
+    await video.play();
+    scanBtn.textContent = '📸 Tap to Capture';
+  } catch(e) {
+    showToast('Camera denied. Type plate manually.');
+    scanBtn.textContent = '📷 Scan Number Plate';
+  }
+}
+
+async function capturePlate() {
+  const video = document.getElementById('camera');
+  const canvas = document.getElementById('canvas');
+  const scanBtn = document.getElementById('scanBtn');
+  const plateInput = document.getElementById('plate');
+  
+  scanBtn.textContent = 'Reading plate...';
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  
+  try {
+    const { data: { text } } = await Tesseract.recognize(canvas, 'eng');
+    const plateMatch = text.toUpperCase().match(/K[A-Z]{2}\s?\d{3}[A-Z]/);
+    if (plateMatch) {
+      plateInput.value = plateMatch[0].replace(/\s+/g, ' ').trim();
+      showToast(`Plate found: ${plateInput.value}`);
+    } else {
+      showToast('No plate detected. Type manually.');
+      plateInput.focus();
+    }
+  } catch(e) {
+    showToast('Scan failed. Type manually.');
+    plateInput.focus();
+  }
+  
+  if (cameraStream) {
+    cameraStream.getTracks().forEach(track => track.stop());
+    cameraStream = null;
+  }
+  video.style.display = 'none';
+  scanBtn.textContent = '📷 Scan Number Plate';
+}
+
+document.getElementById('scanBtn').addEventListener('click', startScan);
 
   function showToast(msg) {
     const t = document.getElementById('toast');
