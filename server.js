@@ -74,4 +74,22 @@ app.get('/api/health', async (req,res) => {
 })
 
 app.get("/stats", async (req, res) => { const snapshot = await db.collection("payments").get(); const total = snapshot.docs.reduce((sum, doc) => sum + doc.data().amount, 0); res.json({ total, count: snapshot.size }); });
-app.listen(3000, () => console.log('Bungoma Pay v1.3 Firebase running'))
+
+app.post('/api/stkpush', async (req, res) => {
+  const {phone, amount, service, plate, zone} = req.body;
+  
+  if (!phone || !amount) {
+    return res.json({success: false, error: 'Phone and amount required'});
+  }
+  
+  if (service === 'Parking' && !plate) {
+    return res.json({success: false, error: 'Plate number required for parking'});
+  }
+  
+  const receipt = 'BP' + Date.now();
+  console.log(`v1.4 Payment: ${phone} - KES${amount} - ${service} - ${plate}`);
+  res.json({success: true, receipt: receipt});
+});
+app.listen(3000, () => console.log('Bungoma Pay v1.4 Firebase running'))
+
+
