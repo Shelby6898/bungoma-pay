@@ -2,3 +2,5 @@ node_modules/
 db/*.json
 .env
 firebase-key.json
+.env
+node_modules/

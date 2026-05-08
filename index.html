@@ -47,54 +47,79 @@
   <option>Business License</option>
   <option>Land Rate</option>
 </select>
-<input id="plate" placeholder="Plate: KDP455H" style="display:none; margin-top:10px">
+<input id="plate" type="text" placeholder="Plate: KDP455N" style="display:none;margin:5px;padding:10px;width:90%;">
 <input id="zone" value="Bungoma Town" readonly style="margin-top:10px">
-    <button class="btn" onclick="lipaSasa()">LIPA SASA</button>
+    
+<button class="btn" id="lipaBtn">LIPA SASA</button>
   </div>
   <div class="footer">Bungoma Pay v1.4 | Secure | Cloud-Enabled | County of Bungoma</div>
   <div class="toast" id="toast"></div>
-<script>
-function togglePlate(){
-  const service = document.getElementById('service').value;
-  document.getElementById('plate').style.display = service === 'Parking' ? 'block' : 'none';
-}
-async function loadStats() {
-  try {
-    const res = await fetch('/stats');
-    const data = await res.json();
-    document.getElementById('total').textContent = `KES ${data.total.toLocaleString()}`;
-    document.getElementById('count').textContent = data.count;
-  } catch(e) {}
-}
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.style.display = 'block';
-  setTimeout(() => t.style.display = 'none', 3000);
-}
-async function lipaSasa(){
-  const phone = document.getElementById('phone').value;
-  const amount = document.getElementById('amount').value;
-  const service = document.getElementById('service').value;
-  const plate = document.getElementById('plate').value;
-  const zone = document.getElementById('zone').value;
-  
-  const res = await fetch('/pay', {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({phone, amount, service, plate, zone})
-  });
-  
-  const data = await res.json();
-  if(data.success){
-    showToast(`Success! Ref: ${data.ref}`);
-    setTimeout(()=>location.reload(), 1000);
-  } else {
-    showToast(`Error: ${data.error}`);
-  }
-}
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-loadStats();
+  const app = initializeApp({ projectId: "bungoma-pay" });
+  const db = getFirestore(app);
+
+  onSnapshot(doc(db, "stats", "totals"), (snap) => {
+    const d = snap.data() || {};
+    document.getElementById('total').textContent = `KES ${d.totalCollected || 0}`;
+    document.getElementById('count').textContent = `${d.transactionCount || 0} Transactions`;
+  });
+
+  function togglePlate() {
+    const service = document.getElementById('service').value;
+    const plateInput = document.getElementById('plate');
+    if (service === 'Parking') {
+      plateInput.style.display = 'block';
+    } else {
+      plateInput.style.display = 'none';
+    }
+  }
+  window.togglePlate = togglePlate;
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.display = 'block';
+    setTimeout(() => t.style.display = 'none', 3000);
+  }
+
+  async function lipaSasa() {
+    const phone = document.getElementById('phone').value;
+    const amount = document.getElementById('amount').value;
+    const service = document.getElementById('service').value;
+    const plate = document.getElementById('plate').value;
+    const zone = document.getElementById('zone').value;
+
+    if (!phone || !amount) {
+      showToast('Phone and Amount required');
+      return;
+    }
+    if (service === 'Parking' && !plate.trim()) {
+      showToast('Error: Plate number required for parking');
+      return;
+    }
+    showToast('Sending STK Push...');
+    try {
+      const res = await fetch('/api/stkpush', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone, amount, service, plate, zone })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('Success! Ref: ' + data.receipt);
+      } else {
+        showToast('Error: ' + data.error);
+      }
+    } catch(e) {
+      showToast('Network error');
+    }
+  }
+
+  document.getElementById('lipaBtn').addEventListener('click', lipaSasa);
+  togglePlate();
 </script>
 </body>
 </html>
