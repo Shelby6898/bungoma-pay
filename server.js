@@ -12,7 +12,11 @@ const serviceAccount = require('./firebase-key.json')
 admin.initializeApp({credential: admin.credential.cert(serviceAccount)})
 const db = admin.firestore()
 const payments = db.collection('payments')
-
+app.post("/pay", (req, res) => {
+  // Forward to /api/pay handler
+  req.url = "/api/pay"; 
+  app(req, res);
+});
 app.post('/api/pay', async (req,res) => {
   const {amount, phone, service} = req.body
   const ref = 'BP'+Date.now()
