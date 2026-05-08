@@ -39,12 +39,25 @@
     <label>Amount (KES)</label>
     <input type="number" id="amount" placeholder="100">
     <label>Service Type</label>
-    <select id="service"><option>Market Fee</option><option>Parking</option><option>Business License</option><option>Land Rate</option></select>
+    <select id="service" onchange="togglePlate()">
+  <option>Market Fee</option>
+  <option>Parking</option>
+  <option>Cess</option>
+  <option>BodaBoda</option>
+  <option>Business License</option>
+  <option>Land Rate</option>
+</select>
+<input id="plate" placeholder="Plate: KDP455H" style="display:none; margin-top:10px">
+<input id="zone" value="Bungoma Town" readonly style="margin-top:10px">
     <button class="btn" onclick="lipaSasa()">LIPA SASA</button>
   </div>
-  <div class="footer">Bungoma Pay v1.3 | Secure | Cloud-Enabled | County of Bungoma</div>
+  <div class="footer">Bungoma Pay v1.4 | Secure | Cloud-Enabled | County of Bungoma</div>
   <div class="toast" id="toast"></div>
 <script>
+function togglePlate(){
+  const service = document.getElementById('service').value;
+  document.getElementById('plate').style.display = service === 'Parking' ? 'block' : 'none';
+}
 async function loadStats() {
   try {
     const res = await fetch('/stats');
@@ -59,19 +72,28 @@ function showToast(msg) {
   t.style.display = 'block';
   setTimeout(() => t.style.display = 'none', 3000);
 }
-async function lipaSasa() {
+async function lipaSasa(){
   const phone = document.getElementById('phone').value;
-  const amount = Number(document.getElementById('amount').value);
+  const amount = document.getElementById('amount').value;
   const service = document.getElementById('service').value;
-  if(!phone ||!amount) return showToast('Enter phone and amount');
-  const res = await fetch('/pay', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({phone, amount, service}) });
+  const plate = document.getElementById('plate').value;
+  const zone = document.getElementById('zone').value;
+  
+  const res = await fetch('/pay', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({phone, amount, service, plate, zone})
+  });
+  
   const data = await res.json();
-  if(data.success) {
-    showToast(`SUCCESS: ${data.id} | KES ${amount}`);
-    document.getElementById('amount').value = '';
-    loadStats();
-  } else showToast('Payment failed');
+  if(data.success){
+    showToast(`Success! Ref: ${data.ref}`);
+    setTimeout(()=>location.reload(), 1000);
+  } else {
+    showToast(`Error: ${data.error}`);
+  }
 }
+
 loadStats();
 </script>
 </body>
