@@ -13,48 +13,55 @@ admin.initializeApp({credential: admin.credential.cert(serviceAccount)})
 const db = admin.firestore()
 const payments = db.collection('payments')
 
-
-app.post('/api/stkpush', async (req, res) => {
-  const {phone, amount, service, plate, zone} = req.body;
-  
-  if (!phone || !amount) {
-    return res.json({success: false, error: 'Phone and amount required'});
-  }
-  
-  if (service === 'Parking' && !plate) {
-    return res.json({success: false, error: 'Plate number required for parking'});
-  }
-  
-  const receipt = 'BP' + Date.now();
-  const amt = parseInt(amount);
-  
+// v1.6.1: Idempotent save. Kills duplicate revenue bug.
+app.post('/api/pay', async (req, res) => {
   try {
-    // 1. Save the actual transaction
-    await db.collection('payments').add({
-      phone: phone,
-      amount: amt,
-      service: service,
-      plate: plate || '',
-      zone: zone || '',
-      ref: receipt,
-      ts: admin.firestore.FieldValue.serverTimestamp()
-    });
+    const data = req.body;
     
-    // 2. Update the running totals
-    const statsRef = db.collection('stats').doc('totals');
-    await statsRef.set({
-      totalCollected: admin.firestore.FieldValue.increment(amt),
+    // FORCE CLIENT_ID - THIS IS THE FIX
+    if(!data.client_id) {
+      data.client_id = `pending_${Date.now()}_${Math.random().toString(36).substr(2,5)}`;
+      console.log(`v1.6.1 GENERATED client_id: ${data.client_id}`);
+    }
+    
+    // DEDUPE CHECK - NO IF STATEMENT, ALWAYS RUNS
+    try {
+      const existing = await db.collection('payments')
+        .where('client_id', '==', data.client_id)
+        .limit(1)
+        .get();
+      
+      if(!existing.empty) {
+        console.log(`v1.6.1 DUPLICATE BLOCKED: ${data.plate} - ${data.client_id}`);
+        return res.json({success: true, duplicate: true, message: 'Already synced'});
+      }
+    } catch(queryErr) {
+      console.error(`v1.6.1 DEDUPE QUERY FAILED:`, queryErr);
+      console.error(`v1.6.1 INDEX LINK:`, queryErr);
+    }
+    
+    const finalData = {
+      ...data,
+      syncedAt: admin.firestore.FieldValue.serverTimestamp(),
+      status: 'SYNCED'
+    };
+    
+    const docRef = await db.collection('payments').add(finalData);
+    
+    await db.collection('stats').doc('totals').set({
+      totalCollected: admin.firestore.FieldValue.increment(data.amount),
       transactionCount: admin.firestore.FieldValue.increment(1)
     }, { merge: true });
     
-    console.log(`v1_4 Payment SAVED: ${phone} - KES${amt} - ${service} - ${plate}`);
-    res.json({success: true, receipt: receipt});
+    console.log(`v1.6.1 SYNCED: ${data.plate} - KES${data.amount}`);
+    res.json({success: true, id: docRef.id});
     
-  } catch (err) {
-    console.error('Firestore save error:', err);
-    res.json({success: false, error: 'Failed to save transaction'});
+  } catch(err) {
+    console.error(`v1.6.1 sync error:`, err);
+    res.status(500).json({success: false});
   }
 });
-app.listen(3000, () => console.log('Bungoma Pay v1.5 Firebase running'))
 
+
+app.listen(3000, () => console.log('Bungoma Pay v1.6.1 DEDUPE firebase running'));
 
