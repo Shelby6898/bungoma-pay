@@ -4,192 +4,262 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Bungoma County Revenue Collection</title>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f7fa; color: #1a1a1a; }
-  .header { background: linear-gradient(135deg, #0F5132, #198754); color: white; padding: 20px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-  .header h1 { font-size: 22px; font-weight: 600; }
-  .header p { font-size: 14px; opacity: 0.9; margin-top: 4px; }
-  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 16px; background: white; margin: 16px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-  .stat { text-align: center; }
-  .stat-value { font-size: 24px; font-weight: 700; color: #0F5132; }
-  .stat-label { font-size: 12px; color: #6c757d; margin-top: 4px; }
-  .status-ok { background: #d1e7dd; color: #0f5132; padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 600; display: inline-block; margin: 0 16px 16px; }
-  .form { background: white; margin: 0 16px 16px; padding: 20px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-    label { display: block; font-size: 14px; font-weight: 500; margin-bottom: 6px; color: #495057; }
-    input, select { width: 100%; padding: 12px; border: 1px solid #ced4da; border-radius: 8px; font-size: 16px; margin-bottom: 16px; }
-  .btn { width: 100%; background: #198754; color: white; border: none; padding: 14px; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; }
-  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #212529; color: white; padding: 12px 20px; border-radius: 8px; font-size: 14px; display: none; }
-  .footer { text-align: center; padding: 20px; font-size: 12px; color: #6c757d; }
+    .header { background: linear-gradient(135deg, #0F5132, #198754); color: white; padding: 20px; text-align: center; }
+    .header h1 { font-size: 18px; font-weight: 600; }
+    .header p { font-size: 12px; opacity: 0.9; margin-top: 4px; }
+    .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 16px; background: white; margin: 16px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .stat { text-align: center; }
+    .stat-value { font-size: 24px; font-weight: 700; color: #0F5132; }
+    .stat-label { font-size: 12px; color: #6c757d; margin-top: 4px; }
+    .card { margin: 16px; padding: 16px; background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .tabs { display: flex; margin-bottom: 16px; border-bottom: 1px solid #eee; }
+    .tab { flex: 1; padding: 12px; background: none; border: none; border-bottom: 3px solid transparent; font-weight: 600; color: #6c757d; cursor: pointer; font-size: 15px; }
+    .tab.active { border-bottom-color: #198754; color: #198754; }
+    input, select { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; }
+    input:focus, select:focus { outline: none; border-color: #198754; }
+    .input-wrap { position: relative; }
+    .input-wrap input { padding-right: 48px; }
+    .cam-btn { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; font-size: 22px; cursor: pointer; padding: 4px; }
+    .btn { width: 100%; padding: 14px; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; margin-top: 8px; cursor: pointer; }
+    .btn:disabled { background: #ccc !important; cursor: not-allowed; }
+    .btn-mpesa { background: #198754; }
+    .btn-cash { background: #0F5132; }
+    #status { margin-top: 12px; font-size: 14px; min-height: 20px; }
+    .success { color: #198754; }
+    .error { color: #dc3545; }
+    .info { color: #6c757d; }
+    .footer { text-align: center; padding: 16px; font-size: 12px; color: #6c757d; }
+    video { width: 100%; border-radius: 8px; display: none; margin-top: 8px; }
   </style>
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 </head>
 <body>
   <div class="header">
-    <h1>Bungoma County Government</h1>
-    <p>Revenue Collection System v1.5 | Cloud Sync Enabled</p>
+    <h1>🏛️ Bungoma County Government</h1>
+    <p>Revenue Collection System v1.6.2 | Cloud Sync Enabled</p>
+    <p id="sysStatus">● SYSTEM ONLINE</p>
   </div>
-  <div class="status-ok">● SYSTEM ONLINE | FIREBASE CONNECTED</div>
   <div class="stats">
-    <div class="stat"><div class="stat-value" id="total">KES 0</div><div class="stat-label">Total Collected</div></div>
-    <div class="stat"><div class="stat-value" id="count">0</div><div class="stat-label">Transactions</div></div>
+    <div class="stat"><div class="stat-value" id="todayTotal">KES 0</div><div class="stat-label">Total Collected</div></div>
+    <div class="stat"><div class="stat-value" id="todayCount">0</div><div class="stat-label">Transactions</div></div>
   </div>
-  <div class="form">
-    <label>Phone Number</label>
-    <input type="tel" id="phone" placeholder="2547XXXXXXXX" value="254">
-    <label>Amount (KES)</label>
-    <input type="number" id="amount" placeholder="100">
-    <label>Service Type</label>
-    <select id="service" onchange="togglePlate()">
-  <option>Market Fee</option>
-  <option>Parking</option>
-  <option>Cess</option>
-  <option>BodaBoda</option>
-  <option>Business License</option>
-  <option>Land Rate</option>
-</select>
-<div id="plateSection" style="display:none;">
-  <button id="scanBtn" type="button" style="margin:5px;padding:12px;width:90%;background:#16a34a;color:white;border:none;border-radius:6px;font-weight:bold;">
-    📷 Scan Number Plate
-  </button>
-  <video id="camera" width="90%" style="display:none;border-radius:6px;margin:5px auto;" playsinline></video>
-  <canvas id="canvas" style="display:none;"></canvas>
-  <input id="plate" type="text" placeholder="Or type: KDP455N" style="margin:5px;padding:10px;width:90%;border:1px solid #ccc;border-radius:6px;">
-</div>
-<input id="zone" value="Bungoma Town" readonly style="margin-top:10px">
-    
-<button class="btn" id="lipaBtn">LIPA SASA</button>
+  <div class="card">
+    <div class="tabs">
+      <button id="mpesaTab" class="tab active" onclick="showTab('mpesa')">💳 M-PESA STK</button>
+      <button id="cashTab" class="tab" onclick="showTab('cash')">💵 CASH PAYMENT</button>
+    </div>
+    <div id="mpesaForm">
+      <input id="mphone" placeholder="Phone Number (M-PESA)">
+      <input id="mamount" type="number" placeholder="Amount (KES)">
+      <select id="mservice">
+        <option>Market Fee</option><option>Parking</option><option>Cess</option>
+        <option>BodaBoda</option><option>Business License</option><option>Land Rate</option>
+      </select>
+      <div class="input-wrap">
+        <input id="mplate" placeholder="Plate No / Client ID">
+        <button class="cam-btn" onclick="startScan('mplate','mcamera','mcanvas')">📷</button>
+      </div>
+      <video id="mcamera" playsinline></video>
+      <canvas id="mcanvas" style="display:none;"></canvas>
+      <input id="mzone" placeholder="Zone / Location" value="Kanduyi">
+      <button id="mpesaBtn" class="btn btn-mpesa" onclick="payMpesa()">💳 LIPA SASA (M-PESA)</button>
+    </div>
+    <div id="cashForm" style="display:none">
+      <input id="camount" type="number" placeholder="Amount (KES)">
+      <select id="cservice">
+        <option>Market Fee</option><option>Parking</option><option>Cess</option>
+        <option>BodaBoda</option><option>Business License</option><option>Land Rate</option>
+      </select>
+      <div class="input-wrap">
+        <input id="cplate" placeholder="Plate No / Client ID">
+        <button class="cam-btn" onclick="startScan('cplate','ccamera','ccanvas')">📷</button>
+      </div>
+      <video id="ccamera" playsinline></video>
+      <canvas id="ccanvas" style="display:none;"></canvas>
+      <input id="czone" placeholder="Zone / Location" value="Kanduyi">
+      <input id="receiptNo" placeholder="Receipt No (optional)">
+      <button id="cashBtn" class="btn btn-cash" onclick="recordCash()">💵 RECORD CASH</button>
+    </div>
+    <div id="status"></div>
   </div>
-  <div class="footer">Bungoma Pay v1.5 | Secure | Cloud-Enabled | County of Bungoma</div>
-  <div class="toast" id="toast"></div>
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  <div class="footer">Bungoma Pay v1.6.2 | Secure | Cloud-Enabled | © Elphaz</div>
 
-  const app = initializeApp({ projectId: "bungoma-pay" });
-  const db = getFirestore(app);
+<script>
+const API = window.location.origin;
+const status = document.getElementById('status');
 
-  onSnapshot(doc(db, "stats", "totals"), (snap) => {
-    const d = snap.data() || {};
-    document.getElementById('total').textContent = `KES ${d.totalCollected || 0}`;
-    document.getElementById('count').textContent = `${d.transactionCount || 0} Transactions`;
-  });
-
-function togglePlate() {
-  const service = document.getElementById('service').value;
-  const plateSection = document.getElementById('plateSection');
-  if (service === 'Parking') {
-    plateSection.style.display = 'block';
-  } else {
-    plateSection.style.display = 'none';
+// ── Stats ──
+async function loadStats() {
+  try {
+    const res = await fetch(API + '/api/stats');
+    const data = await res.json();
+    if (data.success) {
+      document.getElementById('todayTotal').textContent = 'KES ' + (data.totalCollected || 0);
+      document.getElementById('todayCount').textContent = data.transactionCount || 0;
+      document.getElementById('sysStatus').textContent = '● SYSTEM ONLINE';
+    }
+  } catch(e) {
+    document.getElementById('sysStatus').textContent = '● SYSTEM OFFLINE';
   }
 }
-window.togglePlate = togglePlate;
 
-let cameraStream = null;
+// ── Offline sync ──
+window.addEventListener('online', syncPending);
+window.addEventListener('load', () => { loadStats(); syncPending(); });
 
-async function startScan() {
-  const video = document.getElementById('camera');
-  const scanBtn = document.getElementById('scanBtn');
-  
-  if (cameraStream) return capturePlate();
-  
-  scanBtn.textContent = 'Opening camera...';
+async function syncPending() {
+  if (!navigator.onLine) return;
+  const keys = Object.keys(localStorage).filter(k => k.startsWith('pending_'));
+  if (!keys.length) return;
+  status.innerHTML = '<span class="info">Syncing ' + keys.length + ' offline payment(s)...</span>';
+  for (const key of keys) {
+    try {
+      const data = JSON.parse(localStorage.getItem(key));
+      const res = await fetch(API + '/api/pay', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+      });
+      if (res.ok) localStorage.removeItem(key);
+      else break;
+    } catch(e) { break; }
+  }
+  const left = Object.keys(localStorage).filter(k => k.startsWith('pending_')).length;
+  if (!left) { status.innerHTML = '<span class="success">✓ All synced!</span>'; loadStats(); }
+}
+
+// ── Tabs ──
+function showTab(type) {
+  document.getElementById('mpesaForm').style.display = type === 'mpesa' ? 'block' : 'none';
+  document.getElementById('cashForm').style.display = type === 'cash' ? 'block' : 'none';
+  document.getElementById('mpesaTab').classList.toggle('active', type === 'mpesa');
+  document.getElementById('cashTab').classList.toggle('active', type === 'cash');
+  status.innerHTML = '';
+}
+
+// ── Camera OCR ──
+let streams = {};
+async function startScan(inputId, videoId, canvasId) {
+  const video = document.getElementById(videoId);
+  const canvas = document.getElementById(canvasId);
+  if (streams[videoId]) {
+    // Capture
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+    canvas.toBlob(async (blob) => {
+      status.innerHTML = '<span class="info">📷 Reading plate...</span>';
+      try {
+        const { data: { text } } = await Tesseract.recognize(blob, 'eng', {
+          tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
+          tessedit_pageseg_mode: '6'
+        });
+        const match = text.toUpperCase().match(/K[A-Z]{2}\s?\d{3}[A-Z]/);
+        if (match) {
+          document.getElementById(inputId).value = match[0].replace(/\s/g,'');
+          status.innerHTML = '<span class="success">✓ Plate: ' + match[0] + '</span>';
+        } else {
+          status.innerHTML = '<span class="error">No plate found. Type manually.</span>';
+        }
+      } catch(e) { status.innerHTML = '<span class="error">Scan failed. Type manually.</span>'; }
+      streams[videoId].getTracks().forEach(t => t.stop());
+      delete streams[videoId];
+      video.style.display = 'none';
+    }, 'image/jpeg');
+    return;
+  }
   try {
-    cameraStream = await navigator.mediaDevices.getUserMedia({ 
-      video: { facingMode: { ideal: 'environment' } } 
-    });
-    video.srcObject = cameraStream;
+    streams[videoId] = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}}});
+    video.srcObject = streams[videoId];
     video.style.display = 'block';
     await video.play();
-    scanBtn.textContent = '📸 Tap to Capture';
-  } catch(e) {
-    showToast('Camera denied. Type plate manually.');
-    scanBtn.textContent = '📷 Scan Number Plate';
-  }
+    status.innerHTML = '<span class="info">📸 Tap 📷 again to capture</span>';
+  } catch(e) { status.innerHTML = '<span class="error">Camera denied. Type manually.</span>'; }
 }
 
-async function capturePlate() {
-  const video = document.getElementById('camera');
-  const canvas = document.getElementById('canvas');
-  const scanBtn = document.getElementById('scanBtn');
-  const plateInput = document.getElementById('plate');
-  
-  scanBtn.textContent = 'Reading plate...';
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-  canvas.getContext('2d').drawImage(video, 0, 0);
+// ── M-PESA ──
+async function payMpesa() {
+  const phone = document.getElementById('mphone').value.trim();
+  const amount = document.getElementById('mamount').value.trim();
+  const service = document.getElementById('mservice').value;
+  const plate = document.getElementById('mplate').value || 'WALK_IN';
+  const zone = document.getElementById('mzone').value || 'Zone';
+  const btn = document.getElementById('mpesaBtn');
+  if (!phone || !amount) { status.innerHTML = '<span class="error">Enter phone and amount</span>'; return; }
+  if (!navigator.onLine) { status.innerHTML = '<span class="error">📴 No internet. Use Cash tab for offline.</span>'; return; }
+  btn.disabled = true; btn.textContent = 'Sending STK...';
+  status.innerHTML = '<span class="info">Sending STK Push...</span>';
   try {
-const { data: { text } } = await Tesseract.recognize(blob, 'eng', {
-  tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
-  tessedit_pageseg_mode: 6, // PSM_SINGLE_BLOCK
-  preserve_interword_spaces: 0
-});
-   const plateMatch = text.toUpperCase().match(/K[A-Z]{2}\s?\d{3}[A-Z]/);
-    if (plateMatch) {
-      plateInput.value = plateMatch[0].replace(/\s+/g, ' ').trim();
-      showToast(`Plate found: ${plateInput.value}`);
+    const res = await fetch(API + '/api/stkpush', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({phone, amount: parseInt(amount), plate, zone, service, client_id: plate + '_' + Date.now()})
+    });
+    const data = await res.json();
+    if (data.success) {
+      status.innerHTML = '<span class="success">✓ STK sent! Check phone for M-PESA prompt.</span>';
+      setTimeout(loadStats, 5000);
     } else {
-      showToast('No plate detected. Type manually.');
-      plateInput.focus();
+      status.innerHTML = '<span class="error">Error: ' + (data.error || 'STK failed') + '</span>';
     }
-  } catch(e) {
-    showToast('Scan failed. Type manually.');
-    plateInput.focus();
-  }
-  
-  if (cameraStream) {
-    cameraStream.getTracks().forEach(track => track.stop());
-    cameraStream = null;
-  }
-  video.style.display = 'none';
-  scanBtn.textContent = '📷 Scan Number Plate';
+  } catch(e) { status.innerHTML = '<span class="error">Network error: ' + e.message + '</span>'; }
+  btn.disabled = false; btn.textContent = '💳 LIPA SASA (M-PESA)';
 }
 
-document.getElementById('scanBtn').addEventListener('click', startScan);
+// ── Cash ──
+async function recordCash() {
+  const amount = document.getElementById('camount').value.trim();
+  const service = document.getElementById('cservice').value;
+  const plate = document.getElementById('cplate').value.trim();
+  const zone = document.getElementById('czone').value || 'Zone';
+  const receipt_no = document.getElementById('receiptNo').value.trim();
+  const btn = document.getElementById('cashBtn');
+  if (!amount || !plate) { status.innerHTML = '<span class="error">Enter amount and plate/client ID</span>'; return; }
+  const data = {amount: parseInt(amount), plate, zone, service, client_id: plate + '_' + Date.now(), receipt_no, mode: 'cash'};
 
-  function showToast(msg) {
-    const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.style.display = 'block';
-    setTimeout(() => t.style.display = 'none', 3000);
+  // OFFLINE FALLBACK
+  if (!navigator.onLine) {
+    const key = 'pending_' + Date.now() + '_' + Math.random().toString(36).substr(2,5);
+    localStorage.setItem(key, JSON.stringify(data));
+    status.innerHTML = '<span class="success">📴 Saved offline! Will sync when online.</span>';
+    document.getElementById('camount').value = '';
+    document.getElementById('cplate').value = '';
+    document.getElementById('receiptNo').value = '';
+    return;
   }
 
-  async function lipaSasa() {
-    const phone = document.getElementById('phone').value;
-    const amount = document.getElementById('amount').value;
-    const service = document.getElementById('service').value;
-    const plate = document.getElementById('plate').value;
-    const zone = document.getElementById('zone').value;
-
-    if (!phone || !amount) {
-      showToast('Phone and Amount required');
-      return;
+  btn.disabled = true; btn.textContent = 'Recording...';
+  status.innerHTML = '<span class="info">Recording cash payment...</span>';
+  try {
+    const res = await fetch(API + '/api/pay', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(data)
+    });
+    const result = await res.json();
+    if (result.success) {
+      status.innerHTML = '<span class="success">✓ Cash recorded: ' + plate + '</span>';
+      document.getElementById('camount').value = '';
+      document.getElementById('cplate').value = '';
+      document.getElementById('receiptNo').value = '';
+      loadStats();
+    } else {
+      status.innerHTML = '<span class="error">Error: ' + (result.error || 'Failed') + '</span>';
     }
-    if (service === 'Parking' && !plate.trim()) {
-      showToast('Error: Plate number required for parking');
-      return;
-    }
-    showToast('Sending STK Push...');
-    try {
-      const res = await fetch('/api/stkpush', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, amount, service, plate, zone })
-      });
-      const data = await res.json();
-      if (data.success) {
-        showToast('Success! Ref: ' + data.receipt);
-      } else {
-        showToast('Error: ' + data.error);
-      }
-    } catch(e) {
-      showToast('Network error');
-    }
+  } catch(e) {
+    // Save offline on network error
+    const key = 'pending_' + Date.now() + '_' + Math.random().toString(36).substr(2,5);
+    localStorage.setItem(key, JSON.stringify(data));
+    status.innerHTML = '<span class="success">📴 Network error. Saved offline!</span>';
+    document.getElementById('camount').value = '';
+    document.getElementById('cplate').value = '';
   }
+  btn.disabled = false; btn.textContent = '💵 RECORD CASH';
+}
 
-  document.getElementById('lipaBtn').addEventListener('click', lipaSasa);
-  togglePlate();
+showTab('mpesa');
+loadStats();
+setInterval(loadStats, 10000);
 </script>
 </body>
 </html>
