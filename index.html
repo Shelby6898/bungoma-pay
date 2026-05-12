@@ -1,0 +1,503 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bungoma County Government</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --green: #065f46;
+            --green-light: #d1fae5;
+            --green-mid: #059669;
+            --gold: #b45309;
+            --bg: #f8faf9;
+            --card: #ffffff;
+            --text: #111827;
+            --muted: #6b7280;
+            --border: #e5e7eb;
+            --error: #dc2626;
+            --error-bg: #fef2f2;
+            --blue: #1d4ed8;
+            --blue-bg: #eff6ff;
+            --radius: 12px;
+            --shadow: 0 1px 3px rgba(0,0,0,0.07), 0 4px 16px rgba(0,0,0,0.05);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+        .header {
+            background: var(--green);
+            padding: 20px 16px 16px;
+            text-align: center;
+        }
+        .header h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 22px; font-weight: 700; color: #fff;
+        }
+        .header p { font-size: 11px; color: rgba(255,255,255,0.75); margin-top: 3px; }
+        .status {
+            display: inline-flex; align-items: center; gap: 5px;
+            font-size: 10px; color: #6ee7b7; margin-top: 6px;
+            letter-spacing: 1px; text-transform: uppercase; font-weight: 500;
+        }
+        .status::before {
+            content: ''; width: 6px; height: 6px;
+            background: #6ee7b7; border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%,100% { opacity:1; transform:scale(1); }
+            50% { opacity:0.5; transform:scale(1.3); }
+        }
+
+        .container { max-width: 480px; margin: 0 auto; padding: 16px; }
+
+        .stats-card {
+            background: var(--card); border-radius: var(--radius);
+            padding: 20px; display: grid; grid-template-columns: 1fr 1fr;
+            gap: 16px; box-shadow: var(--shadow); margin-bottom: 16px;
+            border: 1px solid var(--border);
+        }
+        .stat { text-align: center; }
+        .stat-value {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 28px; font-weight: 700; color: var(--green); line-height: 1;
+        }
+        .stat-label { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+        .main-card {
+            background: var(--card); border-radius: var(--radius);
+            box-shadow: var(--shadow); border: 1px solid var(--border); overflow: hidden;
+        }
+        .tabs { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--border); }
+        .tab {
+            padding: 14px; background: none; border: none;
+            font-family: 'DM Sans', sans-serif; font-size: 13px;
+            font-weight: 500; color: var(--muted); cursor: pointer;
+            transition: all 0.2s; letter-spacing: 0.3px;
+        }
+        .tab.active {
+            color: var(--green); border-bottom: 2px solid var(--green);
+            background: rgba(6,95,70,0.03);
+        }
+
+        .tab-content { padding: 20px; }
+        .hidden { display: none !important; }
+
+        label {
+            display: block; font-size: 12px; font-weight: 500;
+            color: var(--muted); margin-bottom: 6px; margin-top: 14px;
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        label:first-child { margin-top: 0; }
+
+        input, select {
+            width: 100%; padding: 11px 14px;
+            border: 1.5px solid var(--border); border-radius: 8px;
+            font-family: 'DM Sans', sans-serif; font-size: 15px;
+            color: var(--text); background: #fff;
+            transition: border-color 0.2s, box-shadow 0.2s; outline: none;
+        }
+        input:focus, select:focus {
+            border-color: var(--green);
+            box-shadow: 0 0 0 3px rgba(6,95,70,0.08);
+        }
+
+        .streams { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .stream {
+            padding: 10px 8px; border: 1.5px solid var(--border);
+            border-radius: 8px; background: #fff;
+            font-family: 'DM Sans', sans-serif; font-size: 13px;
+            color: var(--muted); cursor: pointer; text-align: center;
+            transition: all 0.18s; font-weight: 400;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .stream:hover, .stream:active { border-color: var(--green); color: var(--green); }
+        .stream.active {
+            border-color: var(--green); background: var(--green-light);
+            color: var(--green); font-weight: 600;
+        }
+
+        .btn {
+            width: 100%; padding: 15px; border: none; border-radius: 10px;
+            font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600;
+            cursor: pointer; margin-top: 20px; transition: all 0.2s;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .btn-mpesa { background: var(--green); color: #fff; }
+        .btn-mpesa:active { background: #047857; }
+        .btn-cash { background: var(--blue); color: #fff; }
+        .btn-cash:active { background: #1e40af; }
+
+        .msg {
+            margin-top: 14px; padding: 12px 14px; border-radius: 8px;
+            font-size: 13px; line-height: 1.5; display: none;
+        }
+        .msg.show { display: block; }
+        .msg.success { background: var(--green-light); color: var(--green); border: 1px solid #a7f3d0; }
+        .msg.error { background: var(--error-bg); color: var(--error); border: 1px solid #fecaca; }
+        .msg.info { background: var(--blue-bg); color: var(--blue); border: 1px solid #bfdbfe; }
+
+        .txn-section {
+            margin-top: 16px; background: var(--card); border-radius: var(--radius);
+            box-shadow: var(--shadow); border: 1px solid var(--border); overflow: hidden;
+        }
+        .txn-header {
+            padding: 14px 16px; border-bottom: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .txn-header h3 { font-size: 13px; font-weight: 600; }
+        .refresh-btn {
+            font-size: 11px; color: var(--green); cursor: pointer;
+            background: none; border: none; font-family: 'DM Sans', sans-serif;
+            padding: 4px 8px;
+        }
+        .txn-list { max-height: 220px; overflow-y: auto; }
+        .txn-item {
+            padding: 12px 16px; border-bottom: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .txn-item:last-child { border-bottom: none; }
+        .txn-left { display: flex; flex-direction: column; gap: 2px; }
+        .txn-service { font-size: 13px; font-weight: 500; }
+        .txn-meta { font-size: 11px; color: var(--muted); }
+        .txn-right { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+        .txn-amount { font-size: 14px; font-weight: 600; color: var(--green); }
+        .txn-type {
+            font-size: 10px; padding: 2px 7px;
+            border-radius: 20px; font-weight: 500;
+        }
+        .txn-type.mpesa { background: var(--green-light); color: var(--green); }
+        .txn-type.cash { background: var(--blue-bg); color: var(--blue); }
+        .txn-empty { padding: 24px; text-align: center; font-size: 13px; color: var(--muted); }
+
+        .footer {
+            text-align: center; color: var(--muted); font-size: 11px;
+            margin-top: 20px; padding-bottom: 24px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>Bungoma County Government</h1>
+    <p>Revenue Collection System v1.7.0 | Cloud Sync Enabled</p>
+    <div class="status">System Online</div>
+</div>
+
+<div class="container">
+
+    <div class="stats-card">
+        <div class="stat">
+            <div class="stat-value">KES <span id="totalToday">0</span></div>
+            <div class="stat-label">Total Collected Today</div>
+        </div>
+        <div class="stat">
+            <div class="stat-value" id="txnCount">0</div>
+            <div class="stat-label">Transactions</div>
+        </div>
+    </div>
+
+    <div class="main-card">
+        <div class="tabs">
+            <button class="tab active" id="tabMpesa">M-PESA</button>
+            <button class="tab" id="tabCash">CASH</button>
+        </div>
+
+        <!-- M-PESA Tab -->
+        <div id="mpesaTab" class="tab-content">
+            <label>Phone Number</label>
+            <input type="tel" id="phone" placeholder="0712345678" value="0745822565">
+
+            <label>Amount (KES)</label>
+            <input type="number" id="amount" placeholder="50" value="50" min="1" max="150000">
+
+            <label>Revenue Stream</label>
+            <div class="streams" id="mpesaStreams">
+                <button class="stream active" data-stream="Market fee">Market fee</button>
+                <button class="stream" data-stream="Parking">Parking</button>
+                <button class="stream" data-stream="Cess">Cess</button>
+                <button class="stream" data-stream="BodaBoda">BodaBoda</button>
+                <button class="stream" data-stream="Business license">Business license</button>
+                <button class="stream" data-stream="Land Rate">Land Rate</button>
+            </div>
+
+            <label>Plate No / Client ID</label>
+            <input type="text" id="clientId" placeholder="Plate No / Client ID">
+
+            <label>Ward</label>
+            <select id="ward">
+                <option>Kanduyi</option>
+                <option>Tongaren</option>
+                <option>Webuye East</option>
+                <option>Webuye West</option>
+                <option>Bumula</option>
+                <option>Kabuchai</option>
+            </select>
+
+            <button class="btn btn-mpesa" id="mpesaBtn">💳 LIPA SASA (M-PESA)</button>
+            <div class="msg" id="mpesaMsg"></div>
+        </div>
+
+        <!-- Cash Tab -->
+        <div id="cashTab" class="tab-content hidden">
+            <label>Amount (KES)</label>
+            <input type="number" id="cashAmount" placeholder="50" min="1">
+
+            <label>Revenue Stream</label>
+            <div class="streams" id="cashStreams">
+                <button class="stream active" data-stream="Market fee">Market fee</button>
+                <button class="stream" data-stream="Parking">Parking</button>
+                <button class="stream" data-stream="Cess">Cess</button>
+                <button class="stream" data-stream="BodaBoda">BodaBoda</button>
+                <button class="stream" data-stream="Business license">Business license</button>
+                <button class="stream" data-stream="Land Rate">Land Rate</button>
+            </div>
+
+            <label>Client ID</label>
+            <input type="text" id="cashClientId" placeholder="Client ID">
+
+            <label>Ward</label>
+            <select id="cashWard">
+                <option>Kanduyi</option>
+                <option>Tongaren</option>
+                <option>Webuye East</option>
+                <option>Webuye West</option>
+                <option>Bumula</option>
+                <option>Kabuchai</option>
+            </select>
+
+            <button class="btn btn-cash" id="cashBtn">💵 RECORD CASH</button>
+            <div class="msg" id="cashMsg"></div>
+        </div>
+    </div>
+
+    <div class="txn-section">
+        <div class="txn-header">
+            <h3>Recent Transactions</h3>
+            <button class="refresh-btn" id="refreshBtn">↻ Refresh</button>
+        </div>
+        <div class="txn-list" id="txnList">
+            <div class="txn-empty">No transactions yet today</div>
+        </div>
+    </div>
+
+    <div class="footer">Bungoma Pay v1.7.0 | Secure | Cloud-Enabled | © Elphaz Shelby</div>
+</div>
+
+<script>
+(function () {
+    'use strict';
+
+    var API = window.location.origin;
+    var mpesaStream = 'Market fee';
+    var cashStream  = 'Market fee';
+    var totalAmount = 0;
+    var txnCountVal = 0;
+
+    // ── Helper: show message ───────────────────────────────────────────────────
+    function showMsg(id, text, type) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        el.textContent = text;
+        el.className = 'msg show ' + type;
+        setTimeout(function () { el.className = 'msg'; }, 7000);
+    }
+
+    // ── Helper: update counters ────────────────────────────────────────────────
+    function bumpStats(amount) {
+        totalAmount += parseFloat(amount) || 0;
+        txnCountVal += 1;
+        document.getElementById('totalToday').textContent = totalAmount.toLocaleString();
+        document.getElementById('txnCount').textContent = txnCountVal;
+    }
+
+    // ── Tab switching ──────────────────────────────────────────────────────────
+    document.getElementById('tabMpesa').addEventListener('click', function () {
+        document.getElementById('tabMpesa').classList.add('active');
+        document.getElementById('tabCash').classList.remove('active');
+        document.getElementById('mpesaTab').classList.remove('hidden');
+        document.getElementById('cashTab').classList.add('hidden');
+    });
+
+    document.getElementById('tabCash').addEventListener('click', function () {
+        document.getElementById('tabCash').classList.add('active');
+        document.getElementById('tabMpesa').classList.remove('active');
+        document.getElementById('cashTab').classList.remove('hidden');
+        document.getElementById('mpesaTab').classList.add('hidden');
+    });
+
+    // ── Stream buttons ─────────────────────────────────────────────────────────
+    document.getElementById('mpesaStreams').addEventListener('click', function (e) {
+        var btn = e.target.closest('.stream');
+        if (!btn) return;
+        document.querySelectorAll('#mpesaStreams .stream').forEach(function (s) {
+            s.classList.remove('active');
+        });
+        btn.classList.add('active');
+        mpesaStream = btn.getAttribute('data-stream');
+    });
+
+    document.getElementById('cashStreams').addEventListener('click', function (e) {
+        var btn = e.target.closest('.stream');
+        if (!btn) return;
+        document.querySelectorAll('#cashStreams .stream').forEach(function (s) {
+            s.classList.remove('active');
+        });
+        btn.classList.add('active');
+        cashStream = btn.getAttribute('data-stream');
+    });
+
+    // ── Refresh button ─────────────────────────────────────────────────────────
+    document.getElementById('refreshBtn').addEventListener('click', loadStats);
+
+    // ── Load transactions from server ──────────────────────────────────────────
+    function loadStats() {
+        fetch(API + '/api/transactions')
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (!data.success) return;
+
+                var today = new Date().toDateString();
+                var todayTxns = data.transactions.filter(function (t) {
+                    return new Date(t.timestamp).toDateString() === today;
+                });
+
+                totalAmount = todayTxns.reduce(function (sum, t) {
+                    return sum + (parseFloat(t.amount) || 0);
+                }, 0);
+                txnCountVal = todayTxns.length;
+
+                document.getElementById('totalToday').textContent = totalAmount.toLocaleString();
+                document.getElementById('txnCount').textContent = txnCountVal;
+
+                var list = document.getElementById('txnList');
+                if (todayTxns.length === 0) {
+                    list.innerHTML = '<div class="txn-empty">No transactions yet today</div>';
+                    return;
+                }
+
+                var recent = todayTxns.slice().reverse().slice(0, 20);
+                list.innerHTML = recent.map(function (t) {
+                    var typeClass = t.type === 'CASH' ? 'cash' : 'mpesa';
+                    return '<div class="txn-item">' +
+                        '<div class="txn-left">' +
+                            '<div class="txn-service">' + (t.service || 'Payment') + '</div>' +
+                            '<div class="txn-meta">' + (t.ward || '') + ' • ' + (t.clientId || t.receipt || '—') + '</div>' +
+                        '</div>' +
+                        '<div class="txn-right">' +
+                            '<div class="txn-amount">KES ' + parseFloat(t.amount).toLocaleString() + '</div>' +
+                            '<span class="txn-type ' + typeClass + '">' + t.type + '</span>' +
+                        '</div>' +
+                    '</div>';
+                }).join('');
+            })
+            .catch(function (e) { console.error('loadStats error:', e); });
+    }
+
+    // ── M-PESA STK Push ────────────────────────────────────────────────────────
+    document.getElementById('mpesaBtn').addEventListener('click', function () {
+        var phone    = document.getElementById('phone').value.trim();
+        var amount   = document.getElementById('amount').value.trim();
+        var ward     = document.getElementById('ward').value;
+        var clientId = document.getElementById('clientId').value.trim();
+        var btn      = document.getElementById('mpesaBtn');
+
+        if (!phone || !amount) {
+            showMsg('mpesaMsg', 'Phone and amount are required', 'error');
+            return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = 'PROCESSING…';
+        showMsg('mpesaMsg', 'Sending STK Push to ' + phone + '…', 'info');
+
+        fetch(API + '/api/stkpush', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                phone: phone,
+                amount: amount,
+                service: mpesaStream,
+                ward: ward,
+                clientId: clientId
+            })
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (data.success) {
+                showMsg('mpesaMsg', '✅ STK Push sent! Check phone for M-Pesa PIN prompt.', 'success');
+                bumpStats(amount);
+                setTimeout(loadStats, 5000);
+            } else {
+                showMsg('mpesaMsg', '❌ Failed: ' + (data.error || 'Unknown error'), 'error');
+            }
+        })
+        .catch(function () {
+            showMsg('mpesaMsg', '❌ Network error. Is the server running?', 'error');
+        })
+        .finally(function () {
+            btn.disabled = false;
+            btn.textContent = '💳 LIPA SASA (M-PESA)';
+        });
+    });
+
+    // ── Record Cash ────────────────────────────────────────────────────────────
+    document.getElementById('cashBtn').addEventListener('click', function () {
+        var amount   = document.getElementById('cashAmount').value.trim();
+        var ward     = document.getElementById('cashWard').value;
+        var clientId = document.getElementById('cashClientId').value.trim();
+        var btn      = document.getElementById('cashBtn');
+
+        if (!amount) {
+            showMsg('cashMsg', 'Amount is required', 'error');
+            return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = 'SAVING…';
+
+        fetch(API + '/api/cash', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                amount: amount,
+                service: cashStream,
+                ward: ward,
+                clientId: clientId,
+                receipt: 'BGM-' + Date.now()
+            })
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (data.success) {
+                showMsg('cashMsg', '✅ Cash recorded! KES ' + amount + ' for ' + cashStream, 'success');
+                document.getElementById('cashAmount').value = '';
+                document.getElementById('cashClientId').value = '';
+                bumpStats(amount);
+                loadStats();
+            } else {
+                showMsg('cashMsg', '❌ Failed: ' + (data.error || 'Unknown'), 'error');
+            }
+        })
+        .catch(function () {
+            showMsg('cashMsg', '❌ Network error', 'error');
+        })
+        .finally(function () {
+            btn.disabled = false;
+            btn.textContent = '💵 RECORD CASH';
+        });
+    });
+
+    // ── Init ───────────────────────────────────────────────────────────────────
+    loadStats();
+    setInterval(loadStats, 30000);
+
+})();
+</script>
+</body>
+</html>

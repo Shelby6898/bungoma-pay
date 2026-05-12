@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bungoma County Revenue Collection v1.7.0</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f5}.header{background:linear-gradient(135deg,#0F5132,#198754);color:white;padding:20px;text-align:center}.header h1{font-size:18px;font-weight:600}.header p{font-size:12px;opacity:.9;margin-top:4px}.status{color:#4ade80;font-size:11px;margin-top:5px}.container{max-width:500px;margin:0 auto;padding:15px}.stats{background:white;border-radius:12px;padding:20px;margin-bottom:15px;display:grid;grid-template-columns:1fr 1fr;gap:20px;box-shadow:0 2px 8px rgba(0,0,0,.1)}.stat{text-align:center}.stat-value{font-size:24px;font-weight:700;color:#0d4f3c}.stat-label{font-size:12px;color:#6c757d;margin-top:5px}.card{margin:16px;padding:16px;background:white;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.1)}.tabs{display:flex;margin-bottom:16px;border-bottom:2px solid #e5e5e5}.tab{flex:1;padding:12px;background:none;border:none;border-bottom:3px solid transparent;cursor:pointer;font-size:14px;color:#666}.tab.active{border-bottom-color:#198754;color:#198754;font-weight:600}.form-group{margin-bottom:15px}.form-group label{display:block;font-size:13px;color:#333;margin-bottom:8px;font-weight:500}input,select{width:100%;padding:12px;margin:8px 0;border:1px solid #ddd;border-radius:8px;font-size:14px}.radio-group{display:grid;grid-template-columns:1fr 1fr;gap:10px}.radio-item{position:relative}.radio-item input{position:absolute;opacity:0}.radio-item label{display:block;padding:12px;border:2px solid #e5e5e5;border-radius:8px;text-align:center;cursor:pointer;font-size:13px}.radio-item input:checked+label{border-color:#198754;background:#f0fdf4;color:#0d4f3c;font-weight:600}.btn{width:100%;padding:14px;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer}.btn-mpesa{background:#0d4f3c;color:white}.btn-cash{background:#1e40af;color:white}.footer{text-align:center;padding:20px;font-size:11px;color:#999}.hidden{display:none}
+</style>
+</head>
+<body>
+<div class="header"><div>🏛️</div><h1>Bungoma County Government</h1><p>Revenue Collection System v1.7.0 | Cloud Sync Enabled</p><div class="status">● SYSTEM ONLINE</div></div>
+<div class="container">
+<div class="stats"><div class="stat"><div class="stat-value" id="totalCollected">KES 0</div><div class="stat-label">Total Collected Today</div></div><div class="stat"><div class="stat-value" id="totalTransactions">0</div><div class="stat-label">Transactions</div></div></div>
+<div class="card">
+<div class="tabs"><button class="tab active" onclick="showTab('mpesa', this)">M-PESA</button><button class="tab" onclick="showTab('cash', this)">CASH</button></div>
+<div id="mpesaForm">
+<div class="form-group"><label>Phone Number</label><input type="tel" id="mphone" placeholder="0741501282" value="0741501282"></div>
+<div class="form-group"><label>Amount (KES)</label><input type="number" id="mamount" placeholder="Amount" readonly></div>
+<div class="form-group"><label>Revenue Stream</label><div class="radio-group">
+<div class="radio-item"><input type="radio" id="m_market" name="mservice" value="Market fee" checked><label for="m_market">Market fee</label></div>
+<div class="radio-item"><input type="radio" id="m_parking" name="mservice" value="Parking"><label for="m_parking">Parking</label></div>
+<div class="radio-item"><input type="radio" id="m_cess" name="mservice" value="Cess"><label for="m_cess">Cess</label></div>
+<div class="radio-item"><input type="radio" id="m_boda" name="mservice" value="BodaBoda"><label for="m_boda">BodaBoda</label></div>
+<div class="radio-item"><input type="radio" id="m_license" name="mservice" value="Business license"><label for="m_license">Business license</label></div>
+<div class="radio-item"><input type="radio" id="m_land" name="mservice" value="land Rate"><label for="m_land">land Rate</label></div>
+</div></div>
+<div class="form-group"><label>Plate No / Client ID</label><input type="text" id="mclientid" placeholder="Plate No / Client ID"></div>
+<div class="form-group"><label>Ward</label><select id="mward" required><option value="Bungoma Town">Bungoma Town</option><option value="Kanduyi" selected>Kanduyi</option><option value="Webuye West">Webuye West</option><option value="Webuye East">Webuye East</option><option value="Bumula">Bumula</option><option value="Tongaren">Tongaren</option><option value="Sirisia">Sirisia</option><option value="Kimilili">Kimilili</option><option value="MT Elgon">MT Elgon</option></select></div>
+<button class="btn btn-mpesa" onclick="lipasasa()">💳 LIPA SASA (M-PESA)</button>
+</div>
+<div id="cashForm" class="hidden">
+<div class="form-group"><label>Amount (KES)</label><input type="number" id="camount" placeholder="Amount" readonly></div>
+<div class="form-group"><label>Revenue Stream</label><div class="radio-group">
+<div class="radio-item"><input type="radio" id="c_market" name="cservice" value="Market fee" checked><label for="c_market">Market fee</label></div>
+<div class="radio-item"><input type="radio" id="c_parking" name="cservice" value="Parking"><label for="c_parking">Parking</label></div>
+<div class="radio-item"><input type="radio" id="c_cess" name="cservice" value="Cess"><label for="c_cess">Cess</label></div>
+<div class="radio-item"><input type="radio" id="c_boda" name="cservice" value="BodaBoda"><label for="c_boda">BodaBoda</label></div>
+<div class="radio-item"><input type="radio" id="c_license" name="cservice" value="Business license"><label for="c_license">Business license</label></div>
+<div class="radio-item"><input type="radio" id="c_land" name="cservice" value="land Rate"><label for="c_land">land Rate</label></div>
+</div></div>
+<div class="form-group"><label>Client ID</label><input type="text" id="cclientid" placeholder="Client ID"></div>
+<div class="form-group"><label>Ward</label><select id="cward" required><option value="Bungoma Town">Bungoma Town</option><option value="Kanduyi" selected>Kanduyi</option><option value="Webuye West">Webuye West</option><option value="Webuye East">Webuye East</option><option value="Bumula">Bumula</option><option value="Tongaren">Tongaren</option><option value="Sirisia">Sirisia</option><option value="Kimilili">Kimilili</option><option value="MT Elgon">MT Elgon</option></select></div>
+<button class="btn btn-cash" onclick="recordCash()">💵 RECORD CASH</button>
+</div>
+</div>
+<div class="footer">Bungoma Pay v1.7.0 | Secure | Cloud-Enabled | © Elphaz</div>
+<script>
+window.showTab=function(tab,el){document.getElementById('mpesaForm').classList.toggle('hidden',tab!=='mpesa');document.getElementById('cashForm').classList.toggle('hidden',tab!=='cash');document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));el.classList.add('active')};const streamPricing={'Market fee':50,'Parking':100,'Cess':100,'BodaBoda':50,'Business license':500,'land Rate':200};document.addEventListener('DOMContentLoaded',function(){const mamount=document.getElementById('mamount');document.querySelectorAll('input[name="mservice"]').forEach(r=>r.addEventListener('change',function(){if(this.checked&&streamPricing[this.value])mamount.value=streamPricing[this.value]}));const mChecked=document.querySelector('input[name="mservice"]:checked');if(mChecked)mamount.value=streamPricing[mChecked.value];const camount=document.getElementById('camount');document.querySelectorAll('input[name="cservice"]').forEach(r=>r.addEventListener('change',function(){if(this.checked&&streamPricing[this.value])camount.value=streamPricing[this.value]}));const cChecked=document.querySelector('input[name="cservice"]:checked');if(cChecked)camount.value=streamPricing[cChecked.value]});window.lipasasa=async function(){alert('Firebase disabled for testing')};window.recordCash=async function(){const amount=document.getElementById('camount').value;const stream=document.querySelector('input[name="cservice"]:checked').value;alert('Cash recorded: KES '+amount+' for '+stream)};
+</script>
+</body>
+</html>
