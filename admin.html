@@ -13,37 +13,14 @@
 *{margin:0;padding:0;box-sizing:border-box;}
 
 :root{
-  --emerald-900:#064e3b;
-  --emerald-800:#065f46;
-  --emerald-700:#047857;
-  --emerald-600:#059669;
-  --emerald-500:#10b981;
-  --emerald-400:#34d399;
-  --emerald-100:#d1fae5;
-  --emerald-50:#ecfdf5;
-  --blue-600:#2563eb;
-  --blue-50:#eff6ff;
-  --indigo-50:#eef2ff;
-  --indigo-600:#4f46e5;
-  --amber-50:#fffbeb;
-  --amber-600:#d97706;
-  --pink-50:#fdf2f8;
-  --pink-600:#db2777;
-  --slate-900:#0f172a;
-  --slate-800:#1e293b;
-  --slate-700:#334155;
-  --slate-600:#475569;
-  --slate-500:#64748b;
-  --slate-400:#94a3b8;
-  --slate-300:#cbd5e1;
-  --slate-200:#e2e8f0;
-  --slate-100:#f1f5f9;
-  --slate-50:#f8fafc;
-  --white:#ffffff;
-  --radius-xl:24px;
-  --radius-lg:18px;
-  --radius-md:13px;
-  --radius-sm:9px;
+  --emerald-900:#064e3b;--emerald-800:#065f46;--emerald-700:#047857;--emerald-600:#059669;
+  --emerald-500:#10b981;--emerald-400:#34d399;--emerald-100:#d1fae5;--emerald-50:#ecfdf5;
+  --blue-600:#2563eb;--blue-50:#eff6ff;--indigo-50:#eef2ff;--indigo-600:#4f46e5;
+  --amber-50:#fffbeb;--amber-600:#d97706;--pink-50:#fdf2f8;--pink-600:#db2777;
+  --slate-900:#0f172a;--slate-800:#1e293b;--slate-700:#334155;--slate-600:#475569;
+  --slate-500:#64748b;--slate-400:#94a3b8;--slate-300:#cbd5e1;--slate-200:#e2e8f0;
+  --slate-100:#f1f5f9;--slate-50:#f8fafc;--white:#ffffff;
+  --radius-xl:24px;--radius-lg:18px;--radius-md:13px;--radius-sm:9px;
   --shadow:0 4px 24px rgba(6,95,70,0.07),0 1px 4px rgba(0,0,0,0.04);
   --shadow-raised:0 10px 36px rgba(6,95,70,0.13),0 2px 8px rgba(0,0,0,0.06);
   --transition:all 0.22s cubic-bezier(0.4,0,0.2,1);
@@ -52,20 +29,20 @@
 
 body{font-family:'Poppins',sans-serif;background:var(--slate-100);color:var(--slate-800);min-height:100vh;}
 
+/* Auth loading */
+#authLoading{position:fixed;inset:0;background:linear-gradient(135deg,var(--emerald-900),var(--emerald-800));display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;gap:18px;}
+#authLoading .load-logo{width:60px;height:60px;background:linear-gradient(135deg,var(--emerald-500),var(--emerald-400));border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:28px;box-shadow:0 8px 24px rgba(16,185,129,0.4);}
+#authLoading p{color:rgba(255,255,255,0.7);font-size:13px;font-weight:500;}
+.load-spinner{width:28px;height:28px;border:3px solid rgba(255,255,255,0.2);border-top-color:var(--emerald-400);border-radius:50%;animation:spin 0.8s linear infinite;}
+
 /* SIDEBAR */
-.sidebar{
-  position:fixed;top:0;left:0;width:var(--sidebar-w);height:100vh;
-  background:linear-gradient(170deg,var(--emerald-900) 0%,var(--emerald-800) 60%,#076e4f 100%);
-  display:flex;flex-direction:column;z-index:200;overflow:hidden;
-}
+.sidebar{position:fixed;top:0;left:0;width:var(--sidebar-w);height:100vh;background:linear-gradient(170deg,var(--emerald-900) 0%,var(--emerald-800) 60%,#076e4f 100%);display:flex;flex-direction:column;z-index:200;overflow:hidden;}
 .sidebar::before{content:'';position:absolute;top:-90px;right:-90px;width:280px;height:280px;background:radial-gradient(circle,rgba(52,211,153,0.13) 0%,transparent 70%);border-radius:50%;pointer-events:none;}
 .sidebar::after{content:'';position:absolute;bottom:-60px;left:-40px;width:180px;height:180px;background:radial-gradient(circle,rgba(52,211,153,0.07) 0%,transparent 70%);border-radius:50%;pointer-events:none;}
-
 .sb-brand{padding:28px 22px 22px;border-bottom:1px solid rgba(255,255,255,0.08);position:relative;z-index:1;display:flex;align-items:center;gap:12px;}
 .sb-logo{width:44px;height:44px;background:linear-gradient(135deg,var(--emerald-500),var(--emerald-400));border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:21px;box-shadow:0 5px 18px rgba(16,185,129,0.35);flex-shrink:0;}
 .sb-brand-text h2{font-size:16px;font-weight:700;color:var(--white);letter-spacing:-0.2px;}
 .sb-brand-text p{font-size:10.5px;color:var(--emerald-400);text-transform:uppercase;letter-spacing:1.1px;font-weight:500;margin-top:1px;}
-
 .sb-nav{flex:1;padding:20px 14px;display:flex;flex-direction:column;gap:3px;overflow-y:auto;position:relative;z-index:1;}
 .sb-nav::-webkit-scrollbar{width:0;}
 .nav-section-label{font-size:9.5px;text-transform:uppercase;letter-spacing:1.3px;color:rgba(255,255,255,0.3);font-weight:600;padding:0 10px;margin:14px 0 6px;}
@@ -74,7 +51,6 @@ body{font-family:'Poppins',sans-serif;background:var(--slate-100);color:var(--sl
 .nav-item.active{background:rgba(52,211,153,0.14);color:var(--emerald-400);font-weight:600;}
 .nav-icon{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;background:rgba(255,255,255,0.06);flex-shrink:0;}
 .nav-item.active .nav-icon{background:rgba(52,211,153,0.18);}
-
 .sb-footer{padding:16px 14px 24px;border-top:1px solid rgba(255,255,255,0.08);position:relative;z-index:1;}
 .sb-user{display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:14px;background:rgba(255,255,255,0.06);margin-bottom:12px;}
 .sb-avatar{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--emerald-500),var(--emerald-700));display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--white);flex-shrink:0;}
@@ -94,27 +70,27 @@ body{font-family:'Poppins',sans-serif;background:var(--slate-100);color:var(--sl
 .badge-role{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.18);color:var(--white);padding:7px 14px;border-radius:30px;font-size:12px;font-weight:600;backdrop-filter:blur(10px);}
 .live-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);color:rgba(255,255,255,0.75);padding:7px 13px;border-radius:30px;font-size:11.5px;font-weight:500;}
 .live-dot{width:7px;height:7px;background:var(--emerald-400);border-radius:50%;animation:pulse 2s infinite;}
+.header-logout-wrap{position:relative;display:inline-flex;align-items:center;}
+.header-logout-btn{display:flex;align-items:center;gap:7px;padding:8px 16px;border:1px solid rgba(255,255,255,0.2);border-radius:50px;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.75);font-family:'Poppins',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:var(--transition);backdrop-filter:blur(10px);white-space:nowrap;}
+.header-logout-btn:hover{background:rgba(239,68,68,0.22);border-color:rgba(239,68,68,0.45);color:#fecaca;transform:translateY(-1px);box-shadow:0 6px 20px rgba(239,68,68,0.25);}
+.header-logout-btn:active{transform:translateY(0);box-shadow:none;}
+.header-logout-tooltip{position:absolute;bottom:-38px;left:50%;transform:translateX(-50%) translateY(4px);background:rgba(15,23,42,0.92);color:#f1f5f9;font-family:'Poppins',sans-serif;font-size:11px;font-weight:500;padding:5px 11px;border-radius:8px;white-space:nowrap;pointer-events:none;opacity:0;transition:all 0.18s ease;z-index:50;}
+.header-logout-tooltip::before{content:'';position:absolute;top:-5px;left:50%;transform:translateX(-50%);border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:5px solid rgba(15,23,42,0.92);}
+.header-logout-wrap:hover .header-logout-tooltip{opacity:1;transform:translateX(-50%) translateY(0);}
 
 /* CONTENT */
 .content{padding:0 28px 48px;flex:1;}
-
-/* Stats */
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:-52px;margin-bottom:26px;}
 .stat-card{background:var(--white);padding:20px;border-radius:var(--radius-xl);box-shadow:var(--shadow-raised);border:1px solid rgba(226,232,240,0.5);position:relative;overflow:hidden;transition:var(--transition);animation:fadeInUp 0.4s ease both;}
 .stat-card:nth-child(1){animation-delay:0.04s;}.stat-card:nth-child(2){animation-delay:0.09s;}.stat-card:nth-child(3){animation-delay:0.14s;}.stat-card:nth-child(4){animation-delay:0.19s;}
 .stat-card:hover{transform:translateY(-2px);box-shadow:0 14px 40px rgba(6,95,70,0.13);}
 .stat-icon-wrap{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:19px;margin-bottom:14px;}
-.card-revenue .stat-icon-wrap{background:var(--emerald-50);}
-.card-tx      .stat-icon-wrap{background:var(--indigo-50);}
-.card-mpesa   .stat-icon-wrap{background:var(--amber-50);}
-.card-cash    .stat-icon-wrap{background:var(--pink-50);}
+.card-revenue .stat-icon-wrap{background:var(--emerald-50);}.card-tx .stat-icon-wrap{background:var(--indigo-50);}.card-mpesa .stat-icon-wrap{background:var(--amber-50);}.card-cash .stat-icon-wrap{background:var(--pink-50);}
 .stat-card h2{font-size:24px;font-weight:700;color:var(--slate-900);letter-spacing:-0.6px;line-height:1;}
 .stat-card p{font-size:11.5px;color:var(--slate-500);font-weight:500;margin-top:4px;}
 
 /* Grid */
 .dashboard-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;}
-
-/* Card */
 .card{background:var(--white);border-radius:var(--radius-xl);box-shadow:var(--shadow);border:1px solid rgba(226,232,240,0.5);overflow:hidden;animation:fadeInUp 0.4s ease 0.22s both;}
 .card-header{display:flex;align-items:center;justify-content:space-between;padding:20px 24px 16px;border-bottom:1px solid var(--slate-100);}
 .card-header h3{font-size:14.5px;font-weight:700;color:var(--slate-900);}
@@ -126,14 +102,10 @@ body{font-family:'Poppins',sans-serif;background:var(--slate-100);color:var(--sl
 .action-btn{display:flex;flex-direction:column;align-items:center;gap:7px;padding:18px 12px;border-radius:var(--radius-md);border:1.5px solid var(--slate-200);background:var(--slate-50);cursor:pointer;font-family:'Poppins',sans-serif;font-size:12.5px;font-weight:600;color:var(--slate-600);transition:var(--transition);text-align:center;}
 .action-btn .btn-icon{font-size:22px;}
 .action-btn:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,0.07);}
-.action-btn.green{border-color:#a7f3d0;background:var(--emerald-50);color:var(--emerald-700);}
-.action-btn.green:hover{background:#d1fae5;border-color:var(--emerald-400);}
-.action-btn.blue{border-color:#bfdbfe;background:var(--blue-50);color:var(--blue-600);}
-.action-btn.blue:hover{background:#dbeafe;border-color:#93c5fd;}
-.action-btn.indigo{border-color:#c7d2fe;background:var(--indigo-50);color:var(--indigo-600);}
-.action-btn.indigo:hover{background:#e0e7ff;border-color:#a5b4fc;}
-.action-btn.amber{border-color:#fde68a;background:var(--amber-50);color:var(--amber-600);}
-.action-btn.amber:hover{background:#fef3c7;border-color:#fcd34d;}
+.action-btn.green{border-color:#a7f3d0;background:var(--emerald-50);color:var(--emerald-700);}.action-btn.green:hover{background:#d1fae5;border-color:var(--emerald-400);}
+.action-btn.blue{border-color:#bfdbfe;background:var(--blue-50);color:var(--blue-600);}.action-btn.blue:hover{background:#dbeafe;border-color:#93c5fd;}
+.action-btn.indigo{border-color:#c7d2fe;background:var(--indigo-50);color:var(--indigo-600);}.action-btn.indigo:hover{background:#e0e7ff;border-color:#a5b4fc;}
+.action-btn.amber{border-color:#fde68a;background:var(--amber-50);color:var(--amber-600);}.action-btn.amber:hover{background:#fef3c7;border-color:#fcd34d;}
 
 /* Officers table */
 .officers-table{width:100%;border-collapse:collapse;}
@@ -144,10 +116,9 @@ body{font-family:'Poppins',sans-serif;background:var(--slate-100);color:var(--sl
 .officer-av{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--emerald-500),var(--emerald-700));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--white);flex-shrink:0;}
 .status-dot{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;}
 .status-dot::before{content:'';width:7px;height:7px;border-radius:50%;}
-.status-dot.active::before{background:var(--emerald-500);}
-.status-dot.offline::before{background:var(--slate-300);}
+.status-dot.active::before{background:var(--emerald-500);}.status-dot.offline::before{background:var(--slate-300);}
 
-/* Transactions card */
+/* Transactions */
 .transactions-card{background:var(--white);border-radius:var(--radius-xl);box-shadow:var(--shadow);border:1px solid rgba(226,232,240,0.5);overflow:hidden;animation:fadeInUp 0.4s ease 0.28s both;}
 .tx-header{display:flex;align-items:center;justify-content:space-between;padding:20px 24px 16px;border-bottom:1px solid var(--slate-100);}
 .tx-header h3{font-size:14.5px;font-weight:700;color:var(--slate-900);}
@@ -155,24 +126,18 @@ body{font-family:'Poppins',sans-serif;background:var(--slate-100);color:var(--sl
 .tx-live{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:var(--emerald-600);background:var(--emerald-50);padding:5px 12px;border-radius:20px;}
 .tx-live-dot{width:6px;height:6px;background:var(--emerald-500);border-radius:50%;animation:pulse 2s infinite;}
 .tx-body{padding:14px 18px 18px;display:flex;flex-direction:column;gap:9px;max-height:420px;overflow-y:auto;}
-.tx-body::-webkit-scrollbar{width:4px;}
-.tx-body::-webkit-scrollbar-track{background:transparent;}
-.tx-body::-webkit-scrollbar-thumb{background:var(--slate-200);border-radius:4px;}
+.tx-body::-webkit-scrollbar{width:4px;}.tx-body::-webkit-scrollbar-track{background:transparent;}.tx-body::-webkit-scrollbar-thumb{background:var(--slate-200);border-radius:4px;}
 .transaction-item{padding:12px 15px;border:1px solid var(--slate-100);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--slate-50);transition:var(--transition);}
 .transaction-item:hover{background:var(--white);border-color:var(--slate-200);box-shadow:0 2px 10px rgba(0,0,0,0.05);}
 .tx-left{display:flex;align-items:center;gap:11px;min-width:0;}
 .tx-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
-.tx-icon.mpesa{background:#fffbeb;color:#92400e;}
-.tx-icon.cash{background:var(--emerald-50);color:var(--emerald-700);}
-.tx-icon.other{background:#f0f9ff;color:#0369a1;}
+.tx-icon.mpesa{background:#fffbeb;color:#92400e;}.tx-icon.cash{background:var(--emerald-50);color:var(--emerald-700);}.tx-icon.other{background:#f0f9ff;color:#0369a1;}
 .tx-details strong{display:block;font-size:12.5px;font-weight:600;color:var(--slate-800);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .tx-details span{font-size:11px;color:var(--slate-400);}
 .tx-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;}
 .amount-badge{background:var(--emerald-50);color:var(--emerald-700);padding:4px 12px;border-radius:20px;font-size:12.5px;font-weight:700;letter-spacing:-0.2px;}
 .method-tag{font-size:9.5px;font-weight:600;padding:2px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:0.4px;}
-.method-tag.mpesa{background:#fffbeb;color:#92400e;}
-.method-tag.cash{background:var(--emerald-50);color:#065f46;}
-.method-tag.other{background:#f0f9ff;color:#0369a1;}
+.method-tag.mpesa{background:#fffbeb;color:#92400e;}.method-tag.cash{background:var(--emerald-50);color:#065f46;}.method-tag.other{background:#f0f9ff;color:#0369a1;}
 .empty-state{text-align:center;padding:44px 20px;color:var(--slate-400);}
 .empty-state .empty-icon{font-size:36px;margin-bottom:10px;}
 .empty-state p{font-size:13px;font-weight:500;}
@@ -205,14 +170,12 @@ body{font-family:'Poppins',sans-serif;background:var(--slate-100);color:var(--sl
 .status-box.loading{display:flex;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;}
 .spinner{width:14px;height:14px;border:2px solid rgba(29,78,216,0.25);border-top-color:#1d4ed8;border-radius:50%;animation:spin 0.7s linear infinite;flex-shrink:0;}
 
-/* Animations */
 @keyframes fadeInUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
 @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
 @keyframes scaleIn{from{opacity:0;transform:scale(0.93);}to{opacity:1;transform:scale(1);}}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 2px rgba(16,185,129,0.2);}50%{box-shadow:0 0 0 5px rgba(16,185,129,0.06);}}
 @keyframes spin{to{transform:rotate(360deg);}}
 
-/* Responsive */
 @media(max-width:1100px){.stats{grid-template-columns:repeat(2,1fr);}.dashboard-grid{grid-template-columns:1fr;}}
 @media(max-width:800px){:root{--sidebar-w:0px;}.sidebar{width:0;overflow:hidden;}.main{margin-left:0;}.main-header-inner{padding:22px 18px 72px;}.content{padding:0 16px 40px;}.stats{grid-template-columns:1fr 1fr;gap:12px;}}
 
@@ -220,46 +183,33 @@ body{font-family:'Poppins',sans-serif;background:var(--slate-100);color:var(--sl
 </head>
 <body>
 
+<!-- Auth loading overlay -->
+<div id="authLoading">
+  <div class="load-logo">💳</div>
+  <div class="load-spinner"></div>
+  <p>Verifying admin session…</p>
+</div>
+
 <!-- SIDEBAR -->
 <div class="sidebar">
   <div class="sb-brand">
     <div class="sb-logo">💳</div>
-    <div class="sb-brand-text">
-      <h2>Bungoma Pay</h2>
-      <p>Admin Console</p>
-    </div>
+    <div class="sb-brand-text"><h2>Bungoma Pay</h2><p>Admin Console</p></div>
   </div>
-
   <nav class="sb-nav">
     <div class="nav-section-label">Main</div>
-    <div class="nav-item active">
-      <div class="nav-icon">📊</div>Overview
-    </div>
-    <div class="nav-item" onclick="document.querySelector('.transactions-card').scrollIntoView({behavior:'smooth'})">
-      <div class="nav-icon">💸</div>Transactions
-    </div>
+    <div class="nav-item active"><div class="nav-icon">📊</div>Overview</div>
+    <div class="nav-item" onclick="document.querySelector('.transactions-card').scrollIntoView({behavior:'smooth'})"><div class="nav-icon">💸</div>Transactions</div>
     <div class="nav-section-label">Management</div>
-    <div class="nav-item" onclick="openModal('addOfficer')">
-      <div class="nav-icon">👤</div>Add Officer
-    </div>
-    <div class="nav-item" onclick="openModal('report')">
-      <div class="nav-icon">📋</div>Reports
-    </div>
-    <div class="nav-item" onclick="openModal('broadcast')">
-      <div class="nav-icon">📢</div>Broadcast
-    </div>
-    <div class="nav-item" onclick="openModal('settings')">
-      <div class="nav-icon">⚙️</div>Settings
-    </div>
+    <div class="nav-item" onclick="openModal('addOfficer')"><div class="nav-icon">👤</div>Add Officer</div>
+    <div class="nav-item" onclick="openModal('report')"><div class="nav-icon">📋</div>Reports</div>
+    <div class="nav-item" onclick="openModal('broadcast')"><div class="nav-icon">📢</div>Broadcast</div>
+    <div class="nav-item" onclick="openModal('settings')"><div class="nav-icon">⚙️</div>Settings</div>
   </nav>
-
   <div class="sb-footer">
     <div class="sb-user">
       <div class="sb-avatar" id="sbAvatar">A</div>
-      <div class="sb-user-info">
-        <strong id="loggedUser">Admin</strong>
-        <span id="userRole">admin</span>
-      </div>
+      <div class="sb-user-info"><strong id="loggedUser">Admin</strong><span id="userRole">admin</span></div>
     </div>
     <button class="logout-btn" id="logoutBtn">🚪 &nbsp;Sign Out</button>
   </div>
@@ -267,7 +217,6 @@ body{font-family:'Poppins',sans-serif;background:var(--slate-100);color:var(--sl
 
 <!-- MAIN -->
 <div class="main">
-
   <div class="main-header">
     <div class="main-header-inner">
       <div class="main-header-left">
@@ -277,115 +226,65 @@ body{font-family:'Poppins',sans-serif;background:var(--slate-100);color:var(--sl
       <div class="header-badges">
         <span class="badge-role">🛡️ &nbsp;<span id="roleDisplay">Administrator</span></span>
         <span class="live-badge"><span class="live-dot"></span>Live · 5s</span>
+        <div class="header-logout-wrap">
+          <button class="header-logout-btn" id="headerLogoutBtn">🚪 &nbsp;Sign Out</button>
+          <div class="header-logout-tooltip">Sign out of admin</div>
+        </div>
       </div>
     </div>
   </div>
 
   <div class="content">
-
-    <!-- Stats -->
     <div class="stats">
-      <div class="stat-card card-revenue">
-        <div class="stat-icon-wrap">💰</div>
-        <h2 id="totalRevenue">KES 0</h2>
-        <p>Total Revenue</p>
-      </div>
-      <div class="stat-card card-tx">
-        <div class="stat-icon-wrap">🔄</div>
-        <h2 id="totalTransactions">0</h2>
-        <p>Total Transactions</p>
-      </div>
-      <div class="stat-card card-mpesa">
-        <div class="stat-icon-wrap">📱</div>
-        <h2 id="mpesaCount">0</h2>
-        <p>M-PESA Payments</p>
-      </div>
-      <div class="stat-card card-cash">
-        <div class="stat-icon-wrap">💵</div>
-        <h2 id="cashCount">0</h2>
-        <p>Cash Payments</p>
-      </div>
+      <div class="stat-card card-revenue"><div class="stat-icon-wrap">💰</div><h2 id="totalRevenue">KES 0</h2><p>Total Revenue</p></div>
+      <div class="stat-card card-tx"><div class="stat-icon-wrap">🔄</div><h2 id="totalTransactions">0</h2><p>Total Transactions</p></div>
+      <div class="stat-card card-mpesa"><div class="stat-icon-wrap">📱</div><h2 id="mpesaCount">0</h2><p>M-PESA Payments</p></div>
+      <div class="stat-card card-cash"><div class="stat-icon-wrap">💵</div><h2 id="cashCount">0</h2><p>Cash Payments</p></div>
     </div>
 
-    <!-- 2-col grid -->
     <div class="dashboard-grid">
-
       <div class="card">
-        <div class="card-header">
-          <div><h3>Quick Actions</h3><p>Manage officers and system</p></div>
-        </div>
+        <div class="card-header"><div><h3>Quick Actions</h3><p>Manage officers and system</p></div></div>
         <div class="card-body">
           <div class="action-grid">
-            <button class="action-btn green" onclick="openModal('addOfficer')">
-              <span class="btn-icon">👤</span>Add Officer
-            </button>
-            <button class="action-btn blue" onclick="openModal('report')">
-              <span class="btn-icon">📋</span>Reports
-            </button>
-            <button class="action-btn indigo" onclick="openModal('broadcast')">
-              <span class="btn-icon">📢</span>Broadcast
-            </button>
-            <button class="action-btn amber" onclick="openModal('settings')">
-              <span class="btn-icon">⚙️</span>Settings
-            </button>
+            <button class="action-btn green" onclick="openModal('addOfficer')"><span class="btn-icon">👤</span>Add Officer</button>
+            <button class="action-btn blue"  onclick="openModal('report')"><span class="btn-icon">📋</span>Reports</button>
+            <button class="action-btn indigo" onclick="openModal('broadcast')"><span class="btn-icon">📢</span>Broadcast</button>
+            <button class="action-btn amber" onclick="openModal('settings')"><span class="btn-icon">⚙️</span>Settings</button>
           </div>
         </div>
       </div>
-
       <div class="card">
-        <div class="card-header">
-          <div><h3>Officers Overview</h3><p>Active collection officers</p></div>
-        </div>
+        <div class="card-header"><div><h3>Officers Overview</h3><p>Active collection officers</p></div></div>
         <div class="card-body" style="padding-top:6px;">
           <table class="officers-table">
-            <thead>
-              <tr>
-                <th>Officer</th><th>Ward</th><th>Collected</th><th>Status</th>
-              </tr>
-            </thead>
-            <tbody id="officersTableBody">
-              <tr><td colspan="4" style="text-align:center;color:var(--slate-400);padding:24px;font-size:12.5px;">Loading…</td></tr>
-            </tbody>
+            <thead><tr><th>Officer</th><th>Ward</th><th>Collected</th><th>Status</th></tr></thead>
+            <tbody id="officersTableBody"><tr><td colspan="4" style="text-align:center;color:var(--slate-400);padding:24px;font-size:12.5px;">Loading…</td></tr></tbody>
           </table>
         </div>
       </div>
-
     </div>
 
-    <!-- Transactions -->
     <div class="transactions-card">
       <div class="tx-header">
-        <div>
-          <h3>Recent Transactions</h3>
-          <p>All channels — auto-refreshes every 5 seconds</p>
-        </div>
+        <div><h3>Recent Transactions</h3><p>All channels — auto-refreshes every 5 seconds</p></div>
         <span class="tx-live"><span class="tx-live-dot"></span>Live</span>
       </div>
-      <div class="tx-body" id="transactionsList">
-        <div class="empty-state"><div class="empty-icon">⏳</div><p>Loading transactions…</p></div>
-      </div>
+      <div class="tx-body" id="transactionsList"><div class="empty-state"><div class="empty-icon">⏳</div><p>Loading transactions…</p></div></div>
     </div>
-
   </div>
 </div>
 
-<!-- MODAL: Add Officer -->
+<!-- MODALS -->
 <div class="modal-overlay" id="modal-addOfficer">
   <div class="modal">
-    <div class="modal-header">
-      <h3>👤 Add New Officer</h3>
-      <button class="modal-close" onclick="closeModal('addOfficer')">✕</button>
-    </div>
+    <div class="modal-header"><h3>👤 Add New Officer</h3><button class="modal-close" onclick="closeModal('addOfficer')">✕</button></div>
     <div class="modal-body">
       <div class="form-group"><label>Full Name</label><input type="text" id="newOfficerName" placeholder="e.g. John Wanjiku"></div>
       <div class="form-group"><label>Username</label><input type="text" id="newOfficerUsername" placeholder="e.g. jwanjiku"></div>
       <div class="form-group"><label>Password</label><input type="password" id="newOfficerPassword" placeholder="Set a password"></div>
-      <div class="form-group">
-        <label>Assigned Ward</label>
-        <select id="newOfficerWard">
-          <option>Kanduyi</option><option>Kimilili</option><option>Webuye East</option>
-          <option>Webuye West</option><option>Tongaren</option><option>Sirisia</option>
-        </select>
+      <div class="form-group"><label>Assigned Ward</label>
+        <select id="newOfficerWard"><option>Kanduyi</option><option>Kimilili</option><option>Webuye East</option><option>Webuye West</option><option>Tongaren</option><option>Sirisia</option></select>
       </div>
       <div id="addOfficerStatus" class="status-box"></div>
       <div class="modal-actions">
@@ -396,20 +295,12 @@ body{font-family:'Poppins',sans-serif;background:var(--slate-100);color:var(--sl
   </div>
 </div>
 
-<!-- MODAL: Report -->
 <div class="modal-overlay" id="modal-report">
   <div class="modal">
-    <div class="modal-header">
-      <h3>📋 Generate Report</h3>
-      <button class="modal-close" onclick="closeModal('report')">✕</button>
-    </div>
+    <div class="modal-header"><h3>📋 Generate Report</h3><button class="modal-close" onclick="closeModal('report')">✕</button></div>
     <div class="modal-body">
-      <div class="form-group">
-        <label>Report Type</label>
-        <select id="reportType">
-          <option value="daily">Daily Summary</option><option value="weekly">Weekly Summary</option>
-          <option value="monthly">Monthly Summary</option><option value="ward">By Ward</option><option value="officer">By Officer</option>
-        </select>
+      <div class="form-group"><label>Report Type</label>
+        <select id="reportType"><option value="daily">Daily Summary</option><option value="weekly">Weekly Summary</option><option value="monthly">Monthly Summary</option><option value="ward">By Ward</option><option value="officer">By Officer</option></select>
       </div>
       <div class="form-group"><label>From Date</label><input type="date" id="reportFrom"></div>
       <div class="form-group"><label>To Date</label><input type="date" id="reportTo"></div>
@@ -422,13 +313,9 @@ body{font-family:'Poppins',sans-serif;background:var(--slate-100);color:var(--sl
   </div>
 </div>
 
-<!-- MODAL: Broadcast -->
 <div class="modal-overlay" id="modal-broadcast">
   <div class="modal">
-    <div class="modal-header">
-      <h3>📢 Broadcast Message</h3>
-      <button class="modal-close" onclick="closeModal('broadcast')">✕</button>
-    </div>
+    <div class="modal-header"><h3>📢 Broadcast Message</h3><button class="modal-close" onclick="closeModal('broadcast')">✕</button></div>
     <div class="modal-body">
       <div class="form-group"><label>Message to all officers</label><input type="text" id="broadcastMsg" placeholder="Type a message…"></div>
       <div id="broadcastStatus" class="status-box"></div>
@@ -440,20 +327,13 @@ body{font-family:'Poppins',sans-serif;background:var(--slate-100);color:var(--sl
   </div>
 </div>
 
-<!-- MODAL: Settings -->
 <div class="modal-overlay" id="modal-settings">
   <div class="modal">
-    <div class="modal-header">
-      <h3>⚙️ System Settings</h3>
-      <button class="modal-close" onclick="closeModal('settings')">✕</button>
-    </div>
+    <div class="modal-header"><h3>⚙️ System Settings</h3><button class="modal-close" onclick="closeModal('settings')">✕</button></div>
     <div class="modal-body">
       <div class="form-group"><label>System Name</label><input type="text" id="settingsName" value="Bungoma Pay"></div>
-      <div class="form-group">
-        <label>Default Revenue Type</label>
-        <select id="settingsRevType">
-          <option>Parking</option><option>Market Fee</option><option>Cess</option><option>Business Permit</option>
-        </select>
+      <div class="form-group"><label>Default Revenue Type</label>
+        <select id="settingsRevType"><option>Parking</option><option>Market Fee</option><option>Cess</option><option>Business Permit</option></select>
       </div>
       <div id="settingsStatus" class="status-box"></div>
       <div class="modal-actions">
@@ -464,187 +344,264 @@ body{font-family:'Poppins',sans-serif;background:var(--slate-100);color:var(--sl
   </div>
 </div>
 
+<!-- Modal helpers (non-module, called by inline onclick) -->
 <script>
-
-/* ── Auth ─────────────────────────────────────────────── */
-const username = localStorage.getItem('username');
-const role     = localStorage.getItem('userRole');
-
-if(!username){ window.location.href = '/login.html'; }
-if(role !== 'admin'){ window.location.href = '/index.html'; }
-
-document.getElementById('loggedUser').innerText  = username || 'Admin';
-document.getElementById('userRole').innerText    = role    || 'admin';
-document.getElementById('sbAvatar').innerText    = (username || 'A')[0].toUpperCase();
-document.getElementById('roleDisplay').innerText =
-  (role || 'admin').charAt(0).toUpperCase() + (role || 'admin').slice(1);
-
-document.getElementById('logoutBtn').addEventListener('click', () => {
-  localStorage.clear();
-  window.location.href = '/login.html';
+function openModal(id){  document.getElementById('modal-'+id).classList.add('open'); }
+function closeModal(id){ document.getElementById('modal-'+id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(el=>{
+  el.addEventListener('click',e=>{ if(e.target===el) el.classList.remove('open'); });
 });
-
-/* ── Modal helpers ───────────────────────────────────── */
-function openModal(id){
-  document.getElementById('modal-' + id).classList.add('open');
+function showModalStatus(id,msg,type){
+  const box=document.getElementById(id+'Status');
+  if(!box)return;
+  const sp=type==='loading'?'<div class="spinner"></div>':'';
+  const ic=type==='success'?'✅ ':type==='error'?'❌ ':'';
+  box.className='status-box '+type;
+  box.innerHTML=sp+ic+msg;
 }
-function closeModal(id){
-  document.getElementById('modal-' + id).classList.remove('open');
-}
-document.querySelectorAll('.modal-overlay').forEach(el => {
-  el.addEventListener('click', e => { if(e.target === el) el.classList.remove('open'); });
-});
-function showModalStatus(id, msg, type){
-  const box = document.getElementById(id + 'Status');
-  if(!box) return;
-  const sp   = type === 'loading' ? '<div class="spinner"></div>' : '';
-  const icon = type === 'success' ? '✅ ' : type === 'error' ? '❌ ' : '';
-  box.className = 'status-box ' + type;
-  box.innerHTML = sp + icon + msg;
-}
+// These are wired up after Firebase resolves (see module script below)
+// Stub functions prevent errors if buttons clicked before auth resolves
+function submitAddOfficer(){ if(window._submitAddOfficer) window._submitAddOfficer(); }
+function submitReport(){      if(window._submitReport)      window._submitReport(); }
+function submitBroadcast(){   if(window._submitBroadcast)   window._submitBroadcast(); }
+function submitSettings(){    if(window._submitSettings)    window._submitSettings(); }
+</script>
 
-/* ── TX helpers ──────────────────────────────────────── */
-function txClass(m){ if(!m) return 'other'; m=m.toUpperCase(); if(m==='M-PESA') return 'mpesa'; if(m==='CASH') return 'cash'; return 'other'; }
-function txEmoji(m){ if(!m) return '💳'; m=m.toUpperCase(); if(m==='M-PESA') return '📱'; if(m==='CASH') return '💵'; return '💳'; }
+<!--
+  ╔══════════════════════════════════════════════════════╗
+  ║  IMPORTANT: Replace the firebaseConfig object below  ║
+  ║  with your own project's config from the Firebase    ║
+  ║  Console → Project Settings → Your apps → SDK setup  ║
+  ╚══════════════════════════════════════════════════════╝
+-->
+<script type="module">
 
-/* ── Load dashboard ──────────────────────────────────── */
-async function loadDashboard(){
+import { initializeApp }             from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut }
+                                     from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-  try{
-    const r = await fetch('/api/admin/stats');
-    const s = await r.json();
-    if(s.success){
-      document.getElementById('totalRevenue').innerText      = 'KES ' + Number(s.totalRevenue).toLocaleString();
-      document.getElementById('totalTransactions').innerText = Number(s.totalTransactions).toLocaleString();
-    }
-  }catch(e){}
+/* ── 🔧 YOUR FIREBASE CONFIG ─────────────────────────── */
+const firebaseConfig = {
+  apiKey:            "AIzaSyCWqMIaIVpXwi7Am2tFvy4Tq2PGtpYgp_M",
+  authDomain:        "bungoma-pay.firebaseapp.com",
+  projectId:         "bungoma-pay",
+  storageBucket:     "bungoma-pay.firebasestorage.app",
+  messagingSenderId: "1022710513801",
+  appId:             "1:1022710513801:web:4cf8ee7c786e6c333cc658"
+};
 
-  try{
-    const r    = await fetch('/api/transactions');
-    const txns = await r.json();
-    const list = document.getElementById('transactionsList');
-    list.innerHTML = '';
+const app  = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db   = getFirestore(app);
 
-    if(!txns || txns.length === 0){
-      list.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><p>No transactions yet</p></div>';
-      document.getElementById('mpesaCount').innerText = '0';
-      document.getElementById('cashCount').innerText  = '0';
-    } else {
-      let mpesa = 0, cash = 0;
-      txns.forEach(tx => {
-        const m = (tx.paymentMethod||'').toUpperCase();
-        if(m==='M-PESA') mpesa++; if(m==='CASH') cash++;
-        const cls   = txClass(tx.paymentMethod);
-        const icon  = txEmoji(tx.paymentMethod);
-        const label = tx.revenueType || tx.paymentMethod || 'Payment';
-        const sub   = tx.plate || tx.phone || '—';
-        const meth  = tx.paymentMethod || 'Other';
-        const item  = document.createElement('div');
-        item.className = 'transaction-item';
-        item.innerHTML = `
-          <div class="tx-left">
-            <div class="tx-icon ${cls}">${icon}</div>
-            <div class="tx-details"><strong>${label}</strong><span>${sub}</span></div>
-          </div>
-          <div class="tx-right">
-            <span class="amount-badge">KES ${Number(tx.amount).toLocaleString()}</span>
-            <span class="method-tag ${cls}">${meth}</span>
-          </div>`;
-        list.appendChild(item);
-      });
-      document.getElementById('mpesaCount').innerText = mpesa.toLocaleString();
-      document.getElementById('cashCount').innerText  = cash.toLocaleString();
-    }
-  }catch(e){
-    document.getElementById('transactionsList').innerHTML =
-      '<div class="empty-state"><div class="empty-icon">⚠️</div><p>Could not load transactions</p></div>';
+/* ── Auth guard ──────────────────────────────────────── */
+onAuthStateChanged(auth, async (user) => {
+
+  if (!user) {
+    window.location.href = '/login.html';
+    return;
   }
 
-  try{
-    const r   = await fetch('/api/admin/officers');
-    const arr = await r.json();
-    const tb  = document.getElementById('officersTableBody');
-    if(!arr || arr.length === 0){
-      tb.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--slate-400);padding:24px;font-size:12.5px;">No officers found</td></tr>';
-    } else {
-      tb.innerHTML = arr.map(o => {
-        const init  = (o.name||o.username||'O')[0].toUpperCase();
-        const amt   = 'KES ' + Number(o.totalCollected||0).toLocaleString();
-        const cls   = o.online ? 'active' : 'offline';
-        const lbl   = o.online ? 'Active' : 'Offline';
-        return `<tr>
-          <td><div class="officer-name"><div class="officer-av">${init}</div>${o.name||o.username||'—'}</div></td>
-          <td>${o.ward||'—'}</td><td>${amt}</td>
-          <td><span class="status-dot ${cls}">${lbl}</span></td></tr>`;
-      }).join('');
+  let role     = 'officer';
+  let username = user.email ? user.email.split('@')[0] : 'Admin';
+
+  try {
+    const snap = await getDoc(doc(db, 'users', user.uid));
+    if (snap.exists()) {
+      const data = snap.data();
+      role       = data.role     || 'officer';
+      username   = data.username || data.name || username;
     }
-  }catch(e){
-    document.getElementById('officersTableBody').innerHTML = `
-      <tr><td><div class="officer-name"><div class="officer-av">J</div>James Wafula</div></td><td>Kanduyi</td><td>KES 4,200</td><td><span class="status-dot active">Active</span></td></tr>
-      <tr><td><div class="officer-name"><div class="officer-av">M</div>Mary Nekesa</div></td><td>Sirisia</td><td>KES 2,750</td><td><span class="status-dot active">Active</span></td></tr>
-      <tr><td><div class="officer-name"><div class="officer-av">P</div>Peter Simiyu</div></td><td>Kimilili</td><td>KES 1,900</td><td><span class="status-dot offline">Offline</span></td></tr>`;
+  } catch(e) {
+    console.warn('Could not fetch user profile:', e);
   }
-}
 
-loadDashboard();
-setInterval(loadDashboard, 5000);
+  // Only admins allowed here
+  if (role !== 'admin') {
+    window.location.href = '/index.html';
+    return;
+  }
 
-/* ── Add Officer ─────────────────────────────────────── */
-async function submitAddOfficer(){
-  const name = document.getElementById('newOfficerName').value.trim();
-  const un   = document.getElementById('newOfficerUsername').value.trim();
-  const pw   = document.getElementById('newOfficerPassword').value;
-  const ward = document.getElementById('newOfficerWard').value;
-  if(!name||!un||!pw){ showModalStatus('addOfficer','Please fill in all fields.','error'); return; }
-  showModalStatus('addOfficer','Adding officer…','loading');
-  try{
-    const r = await fetch('/api/admin/officers',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,username:un,password:pw,ward,role:'officer'})});
-    const d = await r.json();
-    if(d.success){ showModalStatus('addOfficer','Officer added successfully!','success'); setTimeout(()=>closeModal('addOfficer'),1800); loadDashboard(); }
-    else { showModalStatus('addOfficer',d.error||'Failed to add officer.','error'); }
-  }catch(e){ showModalStatus('addOfficer','Network error. Please try again.','error'); }
-}
+  // Populate UI
+  document.getElementById('loggedUser').innerText  = username;
+  document.getElementById('userRole').innerText    = role;
+  document.getElementById('sbAvatar').innerText    = username[0].toUpperCase();
+  document.getElementById('roleDisplay').innerText = role.charAt(0).toUpperCase() + role.slice(1);
 
-/* ── Report ──────────────────────────────────────────── */
-async function submitReport(){
-  const type = document.getElementById('reportType').value;
-  const from = document.getElementById('reportFrom').value;
-  const to   = document.getElementById('reportTo').value;
-  showModalStatus('report','Generating report…','loading');
-  try{
-    const r = await fetch('/api/admin/report',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type,from,to})});
-    const d = await r.json();
-    if(d.success){ showModalStatus('report','Report generated successfully!','success'); setTimeout(()=>closeModal('report'),1800); }
-    else { showModalStatus('report',d.error||'Report generation failed.','error'); }
-  }catch(e){ showModalStatus('report','Network error. Please try again.','error'); }
-}
+  // Hide loading overlay
+  document.getElementById('authLoading').style.display = 'none';
 
-/* ── Broadcast ───────────────────────────────────────── */
-async function submitBroadcast(){
-  const msg = document.getElementById('broadcastMsg').value.trim();
-  if(!msg){ showModalStatus('broadcast','Please enter a message.','error'); return; }
-  showModalStatus('broadcast','Sending broadcast…','loading');
-  try{
-    const r = await fetch('/api/admin/broadcast',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg})});
-    const d = await r.json();
-    if(d.success){ showModalStatus('broadcast','Message sent to all officers!','success'); document.getElementById('broadcastMsg').value=''; setTimeout(()=>closeModal('broadcast'),1800); }
-    else { showModalStatus('broadcast',d.error||'Broadcast failed.','error'); }
-  }catch(e){ showModalStatus('broadcast','Network error. Please try again.','error'); }
-}
+  // Sign out — sidebar button
+  document.getElementById('logoutBtn').addEventListener('click', async () => {
+    await signOut(auth);
+    window.location.href = '/login.html';
+  });
 
-/* ── Settings ────────────────────────────────────────── */
-async function submitSettings(){
-  const name = document.getElementById('settingsName').value.trim();
-  const rev  = document.getElementById('settingsRevType').value;
-  showModalStatus('settings','Saving settings…','loading');
-  try{
-    const r = await fetch('/api/admin/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({systemName:name,defaultRevenueType:rev})});
-    const d = await r.json();
-    if(d.success){ showModalStatus('settings','Settings saved successfully!','success'); setTimeout(()=>closeModal('settings'),1800); }
-    else { showModalStatus('settings',d.error||'Failed to save settings.','error'); }
-  }catch(e){ showModalStatus('settings','Network error. Please try again.','error'); }
-}
+  // Sign out — header button
+  document.getElementById('headerLogoutBtn').addEventListener('click', async () => {
+    await signOut(auth);
+    window.location.href = '/login.html';
+  });
+
+  // Authenticated fetch — attaches Firebase ID token to every request
+  async function authFetch(url, options = {}) {
+    const token = await user.getIdToken();
+    return fetch(url, {
+      ...options,
+      headers: {
+        ...(options.headers || {}),
+        'Authorization': 'Bearer ' + token,
+        'Content-Type':  'application/json'
+      }
+    });
+  }
+
+  // TX helpers
+  function txClass(m){ if(!m)return'other'; m=m.toUpperCase(); if(m==='M-PESA')return'mpesa'; if(m==='CASH')return'cash'; return'other'; }
+  function txEmoji(m){ if(!m)return'💳'; m=m.toUpperCase(); if(m==='M-PESA')return'📱'; if(m==='CASH')return'💵'; return'💳'; }
+
+  // ── Load dashboard ────────────────────────────────
+  async function loadDashboard() {
+
+    // Stats
+    try {
+      const r = await authFetch('/api/admin/stats');
+      const s = await r.json();
+      if (s.success) {
+        document.getElementById('totalRevenue').innerText      = 'KES ' + Number(s.totalRevenue).toLocaleString();
+        document.getElementById('totalTransactions').innerText = Number(s.totalTransactions).toLocaleString();
+      }
+    } catch(e) {}
+
+    // Transactions
+    try {
+      const r    = await authFetch('/api/transactions');
+      const txns = await r.json();
+      const list = document.getElementById('transactionsList');
+      list.innerHTML = '';
+
+      if (!txns || txns.length === 0) {
+        list.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><p>No transactions yet</p></div>';
+        document.getElementById('mpesaCount').innerText = '0';
+        document.getElementById('cashCount').innerText  = '0';
+      } else {
+        let mpesa = 0, cash = 0;
+        txns.forEach(tx => {
+          const m = (tx.paymentMethod||'').toUpperCase();
+          if(m==='M-PESA') mpesa++; if(m==='CASH') cash++;
+          const cls   = txClass(tx.paymentMethod);
+          const icon  = txEmoji(tx.paymentMethod);
+          const label = tx.revenueType || tx.paymentMethod || 'Payment';
+          const sub   = tx.plate || tx.phone || '—';
+          const meth  = tx.paymentMethod || 'Other';
+          const item  = document.createElement('div');
+          item.className = 'transaction-item';
+          item.innerHTML = `
+            <div class="tx-left">
+              <div class="tx-icon ${cls}">${icon}</div>
+              <div class="tx-details"><strong>${label}</strong><span>${sub}</span></div>
+            </div>
+            <div class="tx-right">
+              <span class="amount-badge">KES ${Number(tx.amount).toLocaleString()}</span>
+              <span class="method-tag ${cls}">${meth}</span>
+            </div>`;
+          list.appendChild(item);
+        });
+        document.getElementById('mpesaCount').innerText = mpesa.toLocaleString();
+        document.getElementById('cashCount').innerText  = cash.toLocaleString();
+      }
+    } catch(e) {
+      document.getElementById('transactionsList').innerHTML =
+        '<div class="empty-state"><div class="empty-icon">⚠️</div><p>Could not load transactions</p></div>';
+    }
+
+    // Officers
+    try {
+      const r   = await authFetch('/api/admin/officers');
+      const arr = await r.json();
+      const tb  = document.getElementById('officersTableBody');
+      if (!arr || arr.length === 0) {
+        tb.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--slate-400);padding:24px;font-size:12.5px;">No officers found</td></tr>';
+      } else {
+        tb.innerHTML = arr.map(o => {
+          const init = (o.name||o.username||'O')[0].toUpperCase();
+          const amt  = 'KES ' + Number(o.totalCollected||0).toLocaleString();
+          const cls  = o.online ? 'active' : 'offline';
+          const lbl  = o.online ? 'Active' : 'Offline';
+          return `<tr>
+            <td><div class="officer-name"><div class="officer-av">${init}</div>${o.name||o.username||'—'}</div></td>
+            <td>${o.ward||'—'}</td><td>${amt}</td>
+            <td><span class="status-dot ${cls}">${lbl}</span></td></tr>`;
+        }).join('');
+      }
+    } catch(e) {
+      document.getElementById('officersTableBody').innerHTML = `
+        <tr><td><div class="officer-name"><div class="officer-av">J</div>James Wafula</div></td><td>Kanduyi</td><td>KES 4,200</td><td><span class="status-dot active">Active</span></td></tr>
+        <tr><td><div class="officer-name"><div class="officer-av">M</div>Mary Nekesa</div></td><td>Sirisia</td><td>KES 2,750</td><td><span class="status-dot active">Active</span></td></tr>
+        <tr><td><div class="officer-name"><div class="officer-av">P</div>Peter Simiyu</div></td><td>Kimilili</td><td>KES 1,900</td><td><span class="status-dot offline">Offline</span></td></tr>`;
+    }
+  }
+
+  loadDashboard();
+  setInterval(loadDashboard, 5000);
+
+  // ── Wire up modal submit handlers ─────────────────
+  window._submitAddOfficer = async () => {
+    const name = document.getElementById('newOfficerName').value.trim();
+    const un   = document.getElementById('newOfficerUsername').value.trim();
+    const pw   = document.getElementById('newOfficerPassword').value;
+    const ward = document.getElementById('newOfficerWard').value;
+    if(!name||!un||!pw){ showModalStatus('addOfficer','Please fill in all fields.','error'); return; }
+    showModalStatus('addOfficer','Adding officer…','loading');
+    try {
+      const r = await authFetch('/api/admin/officers',{method:'POST',body:JSON.stringify({name,username:un,password:pw,ward,role:'officer'})});
+      const d = await r.json();
+      if(d.success){ showModalStatus('addOfficer','Officer added successfully!','success'); setTimeout(()=>closeModal('addOfficer'),1800); loadDashboard(); }
+      else          { showModalStatus('addOfficer',d.error||'Failed to add officer.','error'); }
+    } catch(e){ showModalStatus('addOfficer','Network error. Please try again.','error'); }
+  };
+
+  window._submitReport = async () => {
+    const type=document.getElementById('reportType').value;
+    const from=document.getElementById('reportFrom').value;
+    const to  =document.getElementById('reportTo').value;
+    showModalStatus('report','Generating report…','loading');
+    try {
+      const r=await authFetch('/api/admin/report',{method:'POST',body:JSON.stringify({type,from,to})});
+      const d=await r.json();
+      if(d.success){ showModalStatus('report','Report generated successfully!','success'); setTimeout(()=>closeModal('report'),1800); }
+      else          { showModalStatus('report',d.error||'Report generation failed.','error'); }
+    } catch(e){ showModalStatus('report','Network error. Please try again.','error'); }
+  };
+
+  window._submitBroadcast = async () => {
+    const msg=document.getElementById('broadcastMsg').value.trim();
+    if(!msg){ showModalStatus('broadcast','Please enter a message.','error'); return; }
+    showModalStatus('broadcast','Sending broadcast…','loading');
+    try {
+      const r=await authFetch('/api/admin/broadcast',{method:'POST',body:JSON.stringify({message:msg})});
+      const d=await r.json();
+      if(d.success){ showModalStatus('broadcast','Message sent to all officers!','success'); document.getElementById('broadcastMsg').value=''; setTimeout(()=>closeModal('broadcast'),1800); }
+      else          { showModalStatus('broadcast',d.error||'Broadcast failed.','error'); }
+    } catch(e){ showModalStatus('broadcast','Network error. Please try again.','error'); }
+  };
+
+  window._submitSettings = async () => {
+    const name=document.getElementById('settingsName').value.trim();
+    const rev =document.getElementById('settingsRevType').value;
+    showModalStatus('settings','Saving settings…','loading');
+    try {
+      const r=await authFetch('/api/admin/settings',{method:'POST',body:JSON.stringify({systemName:name,defaultRevenueType:rev})});
+      const d=await r.json();
+      if(d.success){ showModalStatus('settings','Settings saved successfully!','success'); setTimeout(()=>closeModal('settings'),1800); }
+      else          { showModalStatus('settings',d.error||'Failed to save settings.','error'); }
+    } catch(e){ showModalStatus('settings','Network error. Please try again.','error'); }
+  };
+
+}); // end onAuthStateChanged
 
 </script>
+
 </body>
 </html>

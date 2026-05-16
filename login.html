@@ -1,484 +1,202 @@
-
-
-
-
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>Bungoma Pay | Secure Login</title>
-
 <link rel="preconnect" href="https://fonts.googleapis.com">
-
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
 <style>
-
-*{
-margin:0;
-padding:0;
-box-sizing:border-box;
-}
-
+*{margin:0;padding:0;box-sizing:border-box;}
 body{
-font-family:'Poppins',sans-serif;
-height:100vh;
-background:
-linear-gradient(
-135deg,
-#064e3b,
-#047857,
-#10b981
-);
-display:flex;
-justify-content:center;
-align-items:center;
-padding:20px;
-overflow:hidden;
-position:relative;
+  font-family:'Poppins',sans-serif;
+  height:100vh;
+  background:linear-gradient(135deg,#065f3b,#047857,#10b981);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  padding:20px;
+  overflow:hidden;
+  position:relative;
 }
-
-/* Background Glow */
-
 body::before{
-content:'';
-position:absolute;
-width:500px;
-height:500px;
-background:rgba(255,255,255,0.08);
-border-radius:50%;
-top:-150px;
-right:-150px;
-filter:blur(30px);
+  content:'';
+  position:absolute;
+  width:500px;height:500px;
+  background:rgba(255,255,255,0.08);
+  border-radius:50%;
+  top:-150px;right:-150px;
+  filter:blur(30px);
 }
-
 body::after{
-content:'';
-position:absolute;
-width:400px;
-height:400px;
-background:rgba(255,255,255,0.05);
-border-radius:50%;
-bottom:-120px;
-left:-120px;
-filter:blur(30px);
+  content:'';
+  position:absolute;
+  width:400px;height:400px;
+  background:rgba(255,255,255,0.05);
+  border-radius:50%;
+  bottom:-120px;left:-120px;
+  filter:blur(30px);
 }
-
-.login-container{
-position:relative;
-z-index:2;
-width:100%;
-max-width:430px;
-}
-
+.login-container{position:relative;z-index:2;width:100%;max-width:430px;}
 .card{
-background:rgba(255,255,255,0.96);
-backdrop-filter:blur(10px);
-padding:40px 35px;
-border-radius:32px;
-box-shadow:
-0 15px 50px rgba(0,0,0,0.2);
-animation:fadeIn 0.6s ease;
+  background:rgba(255,255,255,0.96);
+  backdrop-filter:blur(10px);
+  padding:40px 35px;
+  border-radius:32px;
+  box-shadow:0 15px 50px rgba(0,0,0,0.2);
+  animation:fadeIn 0.6s ease;
 }
-
 @keyframes fadeIn{
-
-from{
-opacity:0;
-transform:translateY(20px);
+  from{opacity:0;transform:translateY(20px);}
+  to{opacity:1;transform:translateY(0);}
 }
-
-to{
-opacity:1;
-transform:translateY(0);
-}
-
-}
-
 .logo{
-width:75px;
-height:75px;
-background:linear-gradient(
-135deg,
-#047857,
-#10b981
-);
-border-radius:24px;
-display:flex;
-align-items:center;
-justify-content:center;
-margin:auto;
-margin-bottom:22px;
-box-shadow:
-0 10px 25px rgba(4,120,87,0.3);
+  width:75px;height:75px;
+  background:linear-gradient(135deg,#047857,#10b981);
+  border-radius:24px;
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 22px;
+  box-shadow:0 10px 25px rgba(4,120,87,0.3);
 }
-
-.logo span{
-font-size:34px;
-color:white;
-font-weight:700;
-}
-
-h1{
-text-align:center;
-font-size:34px;
-font-weight:700;
-color:#064e3b;
-margin-bottom:8px;
-}
-
-.subtitle{
-text-align:center;
-color:#64748b;
-font-size:15px;
-margin-bottom:30px;
-line-height:1.6;
-}
-
-.form-group{
-margin-bottom:20px;
-}
-
-label{
-display:block;
-margin-bottom:8px;
-font-size:14px;
-font-weight:600;
-color:#334155;
-}
-
-.input-box{
-position:relative;
-}
-
+.logo span{font-size:38px;color:white;font-weight:700;}
+h1{text-align:center;font-size:31px;font-weight:700;color:#065f3b;margin-bottom:8px;}
+.subtitle{text-align:center;color:#64748b;font-size:15px;margin-bottom:30px;line-height:1.6;}
+.form-group{margin-bottom:20px;}
+label{display:block;margin-bottom:8px;font-size:14px;font-weight:600;color:#334155;}
+.input-box{position:relative;}
 .input-box input{
-width:100%;
-padding:16px 18px;
-padding-left:50px;
-border-radius:18px;
-border:1px solid #cbd5e1;
-background:#f8fafc;
-font-size:15px;
-outline:none;
-transition:0.3s;
+  width:100%;padding:17px 18px;padding-left:50px;
+  border-radius:18px;border:1px solid #cbd5e1;background:#f8fafc;
+  font-size:15px;outline:none;transition:0.3s;
 }
-
 .input-box input:focus{
-border-color:#047857;
-background:white;
-box-shadow:
-0 0 0 4px rgba(4,120,87,0.12);
+  border-color:#047857;background:white;
+  box-shadow:0 0 0 4px rgba(4,120,87,0.12);
 }
-
-.icon{
-position:absolute;
-left:18px;
-top:50%;
-transform:translateY(-50%);
-font-size:18px;
-opacity:0.6;
-}
-
+.icon{position:absolute;left:18px;top:50%;transform:translateY(-50%);font-size:18px;opacity:0.6;}
 .login-btn{
-width:100%;
-padding:17px;
-border:none;
-border-radius:18px;
-background:linear-gradient(
-135deg,
-#047857,
-#059669
-);
-color:white;
-font-size:16px;
-font-weight:700;
-cursor:pointer;
-transition:0.3s;
-box-shadow:
-0 8px 20px rgba(5,150,105,0.3);
+  width:100%;padding:17px;border:none;border-radius:18px;
+  background:linear-gradient(135deg,#047857,#059669);color:white;
+  font-size:16px;font-weight:700;cursor:pointer;transition:0.3s;
+  box-shadow:0 8px 20px rgba(5,150,105,0.3);
 }
-
-.login-btn:hover{
-transform:translateY(-2px);
-box-shadow:
-0 12px 25px rgba(5,150,105,0.4);
-}
-
-.login-btn:disabled{
-opacity:0.7;
-cursor:not-allowed;
-}
-
-.status{
-margin-top:18px;
-padding:14px 16px;
-border-radius:16px;
-font-size:14px;
-display:none;
-font-weight:500;
-}
-
-.success{
-display:block;
-background:#dcfce7;
-color:#166534;
-}
-
-.error{
-display:block;
-background:#fee2e2;
-color:#991b1b;
-}
-
-.footer{
-margin-top:25px;
-text-align:center;
-font-size:13px;
-color:#64748b;
-line-height:1.8;
-}
-
-.badge{
-display:inline-block;
-margin-top:12px;
-padding:8px 14px;
-background:#ecfdf5;
-color:#047857;
-border-radius:30px;
-font-size:12px;
-font-weight:700;
-}
-
-@media(max-width:500px){
-
-.card{
-padding:35px 25px;
-}
-
-h1{
-font-size:28px;
-}
-
-}
-
+.login-btn:hover{transform:translateY(-2px);box-shadow:0 12px 25px rgba(5,150,105,0.4);}
+.login-btn:disabled{opacity:0.7;cursor:not-allowed;}
+.status{margin-top:18px;padding:14px 16px;border-radius:16px;font-size:14px;display:none;font-weight:500;}
+.success{display:block;background:#dcfce7;color:#166534;}
+.error{display:block;background:#fee2e2;color:#991b1b;}
+.footer{margin-top:25px;text-align:center;font-size:13px;color:#64748b;line-height:1.8;}
+.badge{display:inline-block;margin-top:12px;padding:8px 14px;background:#ecfdf5;color:#047857;border-radius:30px;font-size:12px;font-weight:700;}
+@media(max-width:500px){.card{padding:35px 25px;}h1{font-size:28px;}}
 </style>
 </head>
-
 <body>
-
 <div class="login-container">
-
-<div class="card">
-
-<div class="logo">
-<span>₿</span>
+  <div class="card">
+    <div class="logo"><span>B</span></div>
+    <h1>Bungoma Pay</h1>
+    <p class="subtitle">Secure Revenue Collection Platform for Bungoma County Government</p>
+    
+    <div class="form-group">
+      <label>Email</label>
+      <div class="input-box">
+        <div class="icon">👤</div>
+        <input type="email" id="email" placeholder="Enter email" autocomplete="email">
+      </div>
+    </div>
+    
+    <div class="form-group">
+      <label>Password</label>
+      <div class="input-box">
+        <div class="icon">🔒</div>
+        <input type="password" id="password" placeholder="Enter password" autocomplete="current-password">
+      </div>
+    </div>
+    
+    <button class="login-btn" id="loginBtn">LOG IN TO SYSTEM</button>
+    <div id="status" class="status"></div>
+    
+    <div class="footer">
+      <div>Protected County Revenue System</div>
+      <div class="badge">● SYSTEM SECURED ©Elphaz Shelby</div>
+    </div>
+  </div>
 </div>
 
-<h1>Bungoma Pay</h1>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-<p class="subtitle">
-Secure Revenue Collection Platform
-for Bungoma County Government
-</p>
+const firebaseConfig = {
+  apiKey: "AIzaSyCWqMIaIVpXwi7Am2tFvy4Tq2PGtpYgp_M",
+  authDomain: "bungoma-pay.firebaseapp.com",
+  projectId: "bungoma-pay",
+  storageBucket: "bungoma-pay.firebasestorage.app",
+  messagingSenderId: "1022710513801",
+  appId: "1:1022710513801:web:4cf8ee7c786e6c333cc658"
+};
 
-<div class="form-group">
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 
-<label>Username</label>
+const statusBox = document.getElementById('status');
+const loginBtn = document.getElementById('loginBtn');
 
-<div class="input-box">
-
-<div class="icon">
-👤
-</div>
-
-<input
-type="text"
-id="username"
-placeholder="Enter username"
-autocomplete="off"
->
-
-</div>
-
-</div>
-
-<div class="form-group">
-
-<label>Password</label>
-
-<div class="input-box">
-
-<div class="icon">
-🔒
-</div>
-
-<input
-type="password"
-id="password"
-placeholder="Enter password"
->
-
-</div>
-
-</div>
-
-<button class="login-btn" id="loginBtn">
-LOGIN TO SYSTEM
-</button>
-
-<div id="status" class="status"></div>
-
-<div class="footer">
-
-<div>
-Protected County Revenue System
-</div>
-
-<div class="badge">
-● SYSTEM SECURED ©Elphaz Shelby
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-<script>
-
-const statusBox =
-document.getElementById('status');
-
-function showStatus(message,type){
-
-statusBox.className =
-`status ${type}`;
-
-statusBox.innerHTML = message;
-
+function showStatus(message, type){
+  statusBox.className = `status ${type}`;
+  statusBox.innerHTML = message;
+  statusBox.style.display = 'block';
 }
 
-document.getElementById('loginBtn')
-.addEventListener('click', async()=>{
-
-const username =
-document.getElementById('username').value;
-
-const password =
-document.getElementById('password').value;
-
-const loginBtn =
-document.getElementById('loginBtn');
-
-if(!username || !password){
-
-showStatus(
-'Please fill all login fields',
-'error'
-);
-
-return;
-
-}
-
-loginBtn.disabled = true;
-
-loginBtn.innerHTML =
-'Authenticating...';
-
-try{
-
-const response = await fetch('/api/login',{
-
-method:'POST',
-
-headers:{
-'Content-Type':'application/json'
-},
-
-body:JSON.stringify({
-username,
-password
-})
-
+// Auto-redirect if already logged in
+onAuthStateChanged(auth, (user) => {
+  if(user){
+    window.location.href = '/index.html';
+  }
 });
 
-const data = await response.json();
-
-if(data.success){
-
-localStorage.setItem(
-'userRole',
-data.role
-);
-
-localStorage.setItem(
-'username',
-data.username
-);
-
-showStatus(
-'Login successful. Redirecting...',
-'success'
-);
-
-setTimeout(()=>{
-
-if(data.role === 'admin'){
-
-window.location.href =
-'/admin.html';
-
-}else{
-
-window.location.href =
-'/index.html';
-
-}
-
-},1200);
-
-}else{
-
-showStatus(
-data.message || 'Invalid credentials',
-'error'
-);
-
-}
-
-}catch(error){
-
-showStatus(
-'Server connection failed',
-'error'
-);
-
-}
-
-loginBtn.disabled = false;
-
-loginBtn.innerHTML =
-'LOGIN TO SYSTEM';
-
+loginBtn.addEventListener('click', async () => {
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value.trim();
+  
+  if(!email || !password){
+    showStatus('Please fill all login fields', 'error');
+    return;
+  }
+  
+  loginBtn.disabled = true;
+  loginBtn.innerHTML = 'Authenticating...';
+  
+  try{
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+    
+    showStatus('Login successful! Redirecting...', 'success');
+    
+    // Get user role from Firestore
+    const { getFirestore, doc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
+    const db = getFirestore(app);
+    const userDoc = await getDoc(doc(db, 'users', user.uid));
+    const role = userDoc.exists() ? userDoc.data().role : 'officer';
+    
+    setTimeout(() => {
+      window.location.href = role === 'admin' ? '/admin.html' : '/index.html';
+    }, 1200);
+    
+  }catch(error){
+    let msg = 'Invalid credentials';
+    if(error.code === 'auth/user-not-found') msg = 'User not found';
+    if(error.code === 'auth/wrong-password') msg = 'Incorrect password';
+    if(error.code === 'auth/invalid-email') msg = 'Invalid email format';
+    showStatus(msg, 'error');
+    loginBtn.disabled = false;
+    loginBtn.innerHTML = 'LOG IN TO SYSTEM';
+  }
 });
 
-document.addEventListener('keypress',(e)=>{
-
-if(e.key === 'Enter'){
-
-document.getElementById('loginBtn')
-.click();
-
-}
-
+document.addEventListener('keydown', (e) => {
+  if(e.key === 'Enter') loginBtn.click();
 });
-
 </script>
-
 </body>
 </html>

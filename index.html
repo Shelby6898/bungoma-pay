@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -51,582 +50,140 @@ body{
   min-height:100vh;
 }
 
+/* ── Auth loading screen ─────────────────────────────── */
+#authLoading{
+  position:fixed;inset:0;
+  background:linear-gradient(135deg,var(--emerald-900),var(--emerald-800));
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  z-index:9999;gap:18px;
+}
+#authLoading .load-logo{
+  width:60px;height:60px;
+  background:linear-gradient(135deg,var(--emerald-500),var(--emerald-400));
+  border-radius:18px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:28px;
+  box-shadow:0 8px 24px rgba(16,185,129,0.4);
+}
+#authLoading p{color:rgba(255,255,255,0.7);font-size:13px;font-weight:500;}
+.load-spinner{
+  width:28px;height:28px;
+  border:3px solid rgba(255,255,255,0.2);
+  border-top-color:var(--emerald-400);
+  border-radius:50%;
+  animation:spin 0.8s linear infinite;
+}
+
 /* ─── Header ───────────────────────────────────────────── */
 .header{
   background:linear-gradient(135deg,var(--emerald-900) 0%,var(--emerald-800) 55%,#076e4f 100%);
-  padding:0;
-  position:relative;
-  overflow:hidden;
+  padding:0;position:relative;overflow:hidden;
 }
-
-.header::before{
-  content:'';
-  position:absolute;
-  top:-120px;right:-100px;
-  width:380px;height:380px;
-  background:radial-gradient(circle,rgba(52,211,153,0.12) 0%,transparent 70%);
-  border-radius:50%;pointer-events:none;
-}
-
-.header::after{
-  content:'';
-  position:absolute;
-  bottom:-60px;left:-60px;
-  width:220px;height:220px;
-  background:radial-gradient(circle,rgba(52,211,153,0.07) 0%,transparent 70%);
-  border-radius:50%;pointer-events:none;
-}
-
-.header-inner{
-  max-width:1060px;
-  margin:auto;
-  padding:28px 24px 80px;
-  position:relative;
-  z-index:1;
-  display:flex;
-  align-items:flex-start;
-  justify-content:space-between;
-  flex-wrap:wrap;
-  gap:18px;
-}
-
-.header-brand{
-  display:flex;
-  align-items:center;
-  gap:14px;
-}
-
-.brand-icon{
-  width:50px;height:50px;
-  background:linear-gradient(135deg,var(--emerald-500),var(--emerald-400));
-  border-radius:15px;
-  display:flex;align-items:center;justify-content:center;
-  font-size:24px;
-  box-shadow:0 6px 20px rgba(16,185,129,0.35);
-  flex-shrink:0;
-}
-
-.header-brand h1{
-  font-size:22px;
-  font-weight:700;
-  color:var(--white);
-  letter-spacing:-0.3px;
-  line-height:1.2;
-}
-
-.header-brand p{
-  font-size:11.5px;
-  color:rgba(255,255,255,0.55);
-  font-weight:400;
-  margin-top:2px;
-}
-
-.header-right{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  flex-wrap:wrap;
-}
-
-.user-pill{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  background:rgba(255,255,255,0.1);
-  border:1px solid rgba(255,255,255,0.15);
-  padding:9px 16px;
-  border-radius:50px;
-  backdrop-filter:blur(10px);
-}
-
-.pill-avatar{
-  width:30px;height:30px;
-  border-radius:8px;
-  background:linear-gradient(135deg,var(--emerald-500),var(--emerald-700));
-  display:flex;align-items:center;justify-content:center;
-  font-size:13px;font-weight:700;
-  color:var(--white);
-  flex-shrink:0;
-}
-
-.pill-info strong{
-  display:block;
-  font-size:13px;
-  font-weight:600;
-  color:var(--white);
-}
-
-.pill-info span{
-  font-size:11px;
-  color:var(--emerald-400);
-  font-weight:500;
-  text-transform:capitalize;
-}
-
-.logout-btn{
-  display:flex;align-items:center;gap:7px;
-  padding:10px 18px;
-  border:1px solid rgba(255,255,255,0.2);
-  border-radius:50px;
-  background:rgba(255,255,255,0.08);
-  color:rgba(255,255,255,0.8);
-  font-family:'Poppins',sans-serif;
-  font-size:12.5px;
-  font-weight:600;
-  cursor:pointer;
-  transition:var(--transition);
-  backdrop-filter:blur(10px);
-}
-
-.logout-btn:hover{
-  background:rgba(239,68,68,0.18);
-  border-color:rgba(239,68,68,0.3);
-  color:#fca5a5;
-}
+.header::before{content:'';position:absolute;top:-120px;right:-100px;width:380px;height:380px;background:radial-gradient(circle,rgba(52,211,153,0.12) 0%,transparent 70%);border-radius:50%;pointer-events:none;}
+.header::after{content:'';position:absolute;bottom:-60px;left:-60px;width:220px;height:220px;background:radial-gradient(circle,rgba(52,211,153,0.07) 0%,transparent 70%);border-radius:50%;pointer-events:none;}
+.header-inner{max-width:1060px;margin:auto;padding:28px 24px 80px;position:relative;z-index:1;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:18px;}
+.header-brand{display:flex;align-items:center;gap:14px;}
+.brand-icon{width:50px;height:50px;background:linear-gradient(135deg,var(--emerald-500),var(--emerald-400));border-radius:15px;display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 6px 20px rgba(16,185,129,0.35);flex-shrink:0;}
+.header-brand h1{font-size:22px;font-weight:700;color:var(--white);letter-spacing:-0.3px;line-height:1.2;}
+.header-brand p{font-size:11.5px;color:rgba(255,255,255,0.55);font-weight:400;margin-top:2px;}
+.header-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.user-pill{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);padding:9px 16px;border-radius:50px;backdrop-filter:blur(10px);}
+.pill-avatar{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--emerald-500),var(--emerald-700));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--white);flex-shrink:0;}
+.pill-info strong{display:block;font-size:13px;font-weight:600;color:var(--white);}
+.pill-info span{font-size:11px;color:var(--emerald-400);font-weight:500;text-transform:capitalize;}
+.logout-btn{display:flex;align-items:center;gap:7px;padding:10px 18px;border:1px solid rgba(255,255,255,0.2);border-radius:50px;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.8);font-family:'Poppins',sans-serif;font-size:12.5px;font-weight:600;cursor:pointer;transition:var(--transition);backdrop-filter:blur(10px);}
+.logout-btn:hover{background:rgba(239,68,68,0.18);border-color:rgba(239,68,68,0.3);color:#fca5a5;}
 
 /* ─── Container ────────────────────────────────────────── */
-.container{
-  max-width:1060px;
-  margin:auto;
-  padding:0 20px 48px;
-}
+.container{max-width:1060px;margin:auto;padding:0 20px 48px;}
 
-/* ─── Stat Cards (overlap header) ─────────────────────── */
-.stats{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:16px;
-  margin-top:-54px;
-  margin-bottom:24px;
-}
-
-.stat-card{
-  background:var(--white);
-  padding:22px 24px;
-  border-radius:var(--radius-xl);
-  box-shadow:var(--shadow-raised);
-  display:flex;
-  align-items:center;
-  gap:16px;
-  border:1px solid rgba(226,232,240,0.5);
-  transition:var(--transition);
-  animation:fadeInUp 0.4s ease both;
-}
-
-.stat-card:nth-child(1){animation-delay:0.05s;}
-.stat-card:nth-child(2){animation-delay:0.12s;}
-
-.stat-card:hover{
-  transform:translateY(-2px);
-  box-shadow:0 14px 40px rgba(6,95,70,0.13);
-}
-
-.stat-icon-wrap{
-  width:50px;height:50px;
-  border-radius:14px;
-  display:flex;align-items:center;justify-content:center;
-  font-size:22px;
-  flex-shrink:0;
-}
-
+/* ─── Stat Cards ─────────────────────────────────────── */
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:-54px;margin-bottom:24px;}
+.stat-card{background:var(--white);padding:22px 24px;border-radius:var(--radius-xl);box-shadow:var(--shadow-raised);display:flex;align-items:center;gap:16px;border:1px solid rgba(226,232,240,0.5);transition:var(--transition);animation:fadeInUp 0.4s ease both;}
+.stat-card:nth-child(1){animation-delay:0.05s;}.stat-card:nth-child(2){animation-delay:0.12s;}
+.stat-card:hover{transform:translateY(-2px);box-shadow:0 14px 40px rgba(6,95,70,0.13);}
+.stat-icon-wrap{width:50px;height:50px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;}
 .stat-card:nth-child(1) .stat-icon-wrap{background:var(--emerald-50);color:var(--emerald-700);}
 .stat-card:nth-child(2) .stat-icon-wrap{background:var(--blue-50);color:var(--blue-600);}
-
-.stat-card h2{
-  font-size:26px;
-  font-weight:700;
-  color:var(--slate-900);
-  letter-spacing:-0.6px;
-  line-height:1;
-}
-
-.stat-card p{
-  font-size:12px;
-  color:var(--slate-500);
-  font-weight:500;
-  margin-top:3px;
-}
+.stat-card h2{font-size:26px;font-weight:700;color:var(--slate-900);letter-spacing:-0.6px;line-height:1;}
+.stat-card p{font-size:12px;color:var(--slate-500);font-weight:500;margin-top:3px;}
 
 /* ─── Main Card ─────────────────────────────────────────── */
-.card{
-  background:var(--white);
-  padding:28px;
-  border-radius:var(--radius-xl);
-  box-shadow:var(--shadow);
-  border:1px solid rgba(226,232,240,0.5);
-  margin-bottom:20px;
-  animation:fadeInUp 0.4s ease 0.18s both;
-}
+.card{background:var(--white);padding:28px;border-radius:var(--radius-xl);box-shadow:var(--shadow);border:1px solid rgba(226,232,240,0.5);margin-bottom:20px;animation:fadeInUp 0.4s ease 0.18s both;}
 
 /* ─── Tab Switch ─────────────────────────────────────────── */
-.switch{
-  display:flex;
-  background:var(--slate-100);
-  border-radius:var(--radius-lg);
-  padding:5px;
-  margin-bottom:26px;
-  gap:4px;
-}
-
-.switch button{
-  flex:1;
-  padding:13px;
-  border:none;
-  background:none;
-  border-radius:var(--radius-md);
-  font-family:'Poppins',sans-serif;
-  font-size:13.5px;
-  font-weight:600;
-  cursor:pointer;
-  color:var(--slate-500);
-  transition:var(--transition);
-  display:flex;align-items:center;justify-content:center;gap:7px;
-}
-
-.switch button.active{
-  background:var(--white);
-  color:var(--emerald-700);
-  box-shadow:0 2px 10px rgba(0,0,0,0.07);
-}
+.switch{display:flex;background:var(--slate-100);border-radius:var(--radius-lg);padding:5px;margin-bottom:26px;gap:4px;}
+.switch button{flex:1;padding:13px;border:none;background:none;border-radius:var(--radius-md);font-family:'Poppins',sans-serif;font-size:13.5px;font-weight:600;cursor:pointer;color:var(--slate-500);transition:var(--transition);display:flex;align-items:center;justify-content:center;gap:7px;}
+.switch button.active{background:var(--white);color:var(--emerald-700);box-shadow:0 2px 10px rgba(0,0,0,0.07);}
 
 /* ─── Form ───────────────────────────────────────────────── */
-.form-group{
-  margin-bottom:18px;
-}
-
-label{
-  display:block;
-  margin-bottom:7px;
-  font-size:13px;
-  font-weight:600;
-  color:var(--slate-700);
-}
-
-input,select{
-  width:100%;
-  padding:14px 16px;
-  border:1.5px solid var(--slate-200);
-  border-radius:var(--radius-md);
-  background:var(--slate-50);
-  font-family:'Poppins',sans-serif;
-  font-size:14px;
-  color:var(--slate-800);
-  transition:var(--transition);
-  outline:none;
-}
-
-input:focus,select:focus{
-  border-color:var(--emerald-500);
-  background:var(--white);
-  box-shadow:0 0 0 3px rgba(16,185,129,0.1);
-}
-
+.form-group{margin-bottom:18px;}
+label{display:block;margin-bottom:7px;font-size:13px;font-weight:600;color:var(--slate-700);}
+input,select{width:100%;padding:14px 16px;border:1.5px solid var(--slate-200);border-radius:var(--radius-md);background:var(--slate-50);font-family:'Poppins',sans-serif;font-size:14px;color:var(--slate-800);transition:var(--transition);outline:none;}
+input:focus,select:focus{border-color:var(--emerald-500);background:var(--white);box-shadow:0 0 0 3px rgba(16,185,129,0.1);}
 input::placeholder{color:var(--slate-400);}
 
 /* ─── Revenue Type Grid ──────────────────────────────────── */
-.revenue-grid{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:10px;
-}
-
-.revenue-btn{
-  padding:14px 12px;
-  border-radius:var(--radius-md);
-  border:1.5px solid var(--slate-200);
-  background:var(--slate-50);
-  cursor:pointer;
-  text-align:center;
-  font-family:'Poppins',sans-serif;
-  font-size:13px;
-  font-weight:600;
-  color:var(--slate-600);
-  transition:var(--transition);
-  display:flex;flex-direction:column;align-items:center;gap:5px;
-}
-
-.revenue-btn:hover{
-  border-color:var(--emerald-400);
-  color:var(--emerald-700);
-  background:var(--emerald-50);
-}
-
-.revenue-btn.active{
-  background:var(--emerald-50);
-  border-color:var(--emerald-600);
-  color:var(--emerald-700);
-  box-shadow:0 0 0 3px rgba(16,185,129,0.08);
-}
-
+.revenue-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.revenue-btn{padding:14px 12px;border-radius:var(--radius-md);border:1.5px solid var(--slate-200);background:var(--slate-50);cursor:pointer;text-align:center;font-family:'Poppins',sans-serif;font-size:13px;font-weight:600;color:var(--slate-600);transition:var(--transition);display:flex;flex-direction:column;align-items:center;gap:5px;}
+.revenue-btn:hover{border-color:var(--emerald-400);color:var(--emerald-700);background:var(--emerald-50);}
+.revenue-btn.active{background:var(--emerald-50);border-color:var(--emerald-600);color:var(--emerald-700);box-shadow:0 0 0 3px rgba(16,185,129,0.08);}
 .revenue-btn .rev-icon{font-size:20px;}
 
 /* ─── Submit Buttons ─────────────────────────────────────── */
-.submit-btn{
-  width:100%;
-  padding:16px;
-  border:none;
-  border-radius:var(--radius-lg);
-  font-family:'Poppins',sans-serif;
-  font-size:15px;
-  font-weight:700;
-  cursor:pointer;
-  display:flex;align-items:center;justify-content:center;gap:9px;
-  transition:var(--transition);
-  letter-spacing:0.2px;
-  margin-top:6px;
-}
-
-.mpesa-btn{
-  background:linear-gradient(135deg,var(--blue-600),#1d4ed8);
-  color:var(--white);
-  box-shadow:0 6px 20px rgba(37,99,235,0.3);
-}
-
-.mpesa-btn:hover{
-  transform:translateY(-1px);
-  box-shadow:0 10px 28px rgba(37,99,235,0.38);
-}
-
+.submit-btn{width:100%;padding:16px;border:none;border-radius:var(--radius-lg);font-family:'Poppins',sans-serif;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;transition:var(--transition);letter-spacing:0.2px;margin-top:6px;}
+.mpesa-btn{background:linear-gradient(135deg,var(--blue-600),#1d4ed8);color:var(--white);box-shadow:0 6px 20px rgba(37,99,235,0.3);}
+.mpesa-btn:hover{transform:translateY(-1px);box-shadow:0 10px 28px rgba(37,99,235,0.38);}
 .mpesa-btn:active{transform:translateY(0);}
-
-.cash-btn{
-  background:linear-gradient(135deg,var(--emerald-600),var(--emerald-700));
-  color:var(--white);
-  box-shadow:0 6px 20px rgba(5,150,105,0.3);
-}
-
-.cash-btn:hover{
-  transform:translateY(-1px);
-  box-shadow:0 10px 28px rgba(5,150,105,0.38);
-}
-
+.cash-btn{background:linear-gradient(135deg,var(--emerald-600),var(--emerald-700));color:var(--white);box-shadow:0 6px 20px rgba(5,150,105,0.3);}
+.cash-btn:hover{transform:translateY(-1px);box-shadow:0 10px 28px rgba(5,150,105,0.38);}
 .cash-btn:active{transform:translateY(0);}
 
 /* ─── Status Box ─────────────────────────────────────────── */
-.status-box{
-  margin-top:18px;
-  padding:14px 18px;
-  border-radius:var(--radius-md);
-  font-size:13.5px;
-  font-weight:500;
-  display:none;
-  align-items:center;
-  gap:10px;
-  animation:fadeInUp 0.25s ease;
-}
-
-.success{
-  display:flex;
-  background:#f0fdf4;
-  color:#166534;
-  border:1px solid #bbf7d0;
-}
-
-.error{
-  display:flex;
-  background:#fef2f2;
-  color:#991b1b;
-  border:1px solid #fecaca;
-}
-
-.loading{
-  display:flex;
-  background:#eff6ff;
-  color:#1d4ed8;
-  border:1px solid #bfdbfe;
-}
+.status-box{margin-top:18px;padding:14px 18px;border-radius:var(--radius-md);font-size:13.5px;font-weight:500;display:none;align-items:center;gap:10px;animation:fadeInUp 0.25s ease;}
+.success{display:flex;background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;}
+.error{display:flex;background:#fef2f2;color:#991b1b;border:1px solid #fecaca;}
+.loading{display:flex;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;}
 
 /* ─── Transactions ───────────────────────────────────────── */
-.transactions{
-  background:var(--white);
-  border-radius:var(--radius-xl);
-  box-shadow:var(--shadow);
-  border:1px solid rgba(226,232,240,0.5);
-  overflow:hidden;
-  animation:fadeInUp 0.4s ease 0.24s both;
-}
-
-.tx-header{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  padding:22px 24px 16px;
-  border-bottom:1px solid var(--slate-100);
-}
-
-.tx-header h3{
-  font-size:15px;
-  font-weight:700;
-  color:var(--slate-900);
-}
-
-.tx-header p{
-  font-size:12px;
-  color:var(--slate-400);
-  margin-top:2px;
-}
-
-.tx-live{
-  display:inline-flex;
-  align-items:center;
-  gap:6px;
-  font-size:11.5px;
-  font-weight:600;
-  color:var(--emerald-600);
-  background:var(--emerald-50);
-  padding:5px 12px;
-  border-radius:20px;
-}
-
-.tx-live-dot{
-  width:6px;height:6px;
-  background:var(--emerald-500);
-  border-radius:50%;
-  animation:pulse 2s infinite;
-}
-
-.tx-body{
-  padding:14px 18px 18px;
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-  max-height:400px;
-  overflow-y:auto;
-}
-
+.transactions{background:var(--white);border-radius:var(--radius-xl);box-shadow:var(--shadow);border:1px solid rgba(226,232,240,0.5);overflow:hidden;animation:fadeInUp 0.4s ease 0.24s both;}
+.tx-header{display:flex;align-items:center;justify-content:space-between;padding:22px 24px 16px;border-bottom:1px solid var(--slate-100);}
+.tx-header h3{font-size:15px;font-weight:700;color:var(--slate-900);}
+.tx-header p{font-size:12px;color:var(--slate-400);margin-top:2px;}
+.tx-live{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;color:var(--emerald-600);background:var(--emerald-50);padding:5px 12px;border-radius:20px;}
+.tx-live-dot{width:6px;height:6px;background:var(--emerald-500);border-radius:50%;animation:pulse 2s infinite;}
+.tx-body{padding:14px 18px 18px;display:flex;flex-direction:column;gap:10px;max-height:400px;overflow-y:auto;}
 .tx-body::-webkit-scrollbar{width:4px;}
 .tx-body::-webkit-scrollbar-track{background:transparent;}
 .tx-body::-webkit-scrollbar-thumb{background:var(--slate-200);border-radius:4px;}
-
-.transaction-item{
-  padding:13px 16px;
-  border:1px solid var(--slate-100);
-  border-radius:var(--radius-md);
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:12px;
-  background:var(--slate-50);
-  transition:var(--transition);
-}
-
-.transaction-item:hover{
-  background:var(--white);
-  border-color:var(--slate-200);
-  box-shadow:0 2px 10px rgba(0,0,0,0.05);
-}
-
-.tx-left{
-  display:flex;
-  align-items:center;
-  gap:12px;
-  min-width:0;
-}
-
-.tx-icon{
-  width:38px;height:38px;
-  border-radius:11px;
-  display:flex;align-items:center;justify-content:center;
-  font-size:16px;
-  flex-shrink:0;
-}
-
+.transaction-item{padding:13px 16px;border:1px solid var(--slate-100);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--slate-50);transition:var(--transition);}
+.transaction-item:hover{background:var(--white);border-color:var(--slate-200);box-shadow:0 2px 10px rgba(0,0,0,0.05);}
+.tx-left{display:flex;align-items:center;gap:12px;min-width:0;}
+.tx-icon{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
 .tx-icon.mpesa{background:#fffbeb;color:#92400e;}
 .tx-icon.cash{background:var(--emerald-50);color:var(--emerald-700);}
 .tx-icon.other{background:#f0f9ff;color:#0369a1;}
-
-.tx-details strong{
-  display:block;
-  font-size:13px;
-  font-weight:600;
-  color:var(--slate-800);
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-}
-
-.tx-details span{
-  font-size:11.5px;
-  color:var(--slate-400);
-}
-
-.tx-right{
-  display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;
-}
-
-.badge{
-  background:var(--emerald-50);
-  color:var(--emerald-700);
-  padding:5px 13px;
-  border-radius:20px;
-  font-size:13px;
-  font-weight:700;
-  letter-spacing:-0.2px;
-}
-
-.method-tag{
-  font-size:10px;
-  font-weight:600;
-  padding:2px 8px;
-  border-radius:20px;
-  text-transform:uppercase;
-  letter-spacing:0.4px;
-}
-
+.tx-details strong{display:block;font-size:13px;font-weight:600;color:var(--slate-800);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tx-details span{font-size:11.5px;color:var(--slate-400);}
+.tx-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;}
+.badge{background:var(--emerald-50);color:var(--emerald-700);padding:5px 13px;border-radius:20px;font-size:13px;font-weight:700;letter-spacing:-0.2px;}
+.method-tag{font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:0.4px;}
 .method-tag.mpesa{background:#fffbeb;color:#92400e;}
 .method-tag.cash{background:var(--emerald-50);color:#065f46;}
 .method-tag.other{background:#f0f9ff;color:#0369a1;}
-
-.empty-state{
-  text-align:center;padding:48px 20px;color:var(--slate-400);
-}
-
+.empty-state{text-align:center;padding:48px 20px;color:var(--slate-400);}
 .empty-state .empty-icon{font-size:38px;margin-bottom:10px;}
 .empty-state p{font-size:13.5px;font-weight:500;}
-
 .hidden{display:none;}
-
-/* ─── Section divider label ──────────────────────────────── */
-.section-label{
-  font-size:11px;
-  font-weight:700;
-  text-transform:uppercase;
-  letter-spacing:1.2px;
-  color:var(--slate-400);
-  margin-bottom:14px;
-  display:flex;align-items:center;gap:8px;
-}
-
-.section-label::after{
-  content:'';
-  flex:1;
-  height:1px;
-  background:var(--slate-200);
-}
+.section-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--slate-400);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.section-label::after{content:'';flex:1;height:1px;background:var(--slate-200);}
 
 /* ─── Animations ─────────────────────────────────────────── */
-@keyframes fadeInUp{
-  from{opacity:0;transform:translateY(14px);}
-  to{opacity:1;transform:translateY(0);}
-}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 2px rgba(16,185,129,0.2);}50%{box-shadow:0 0 0 5px rgba(16,185,129,0.06);}}
+@keyframes spin{to{transform:rotate(360deg);}}
+.spinner{width:15px;height:15px;border:2px solid rgba(29,78,216,0.3);border-top-color:#1d4ed8;border-radius:50%;animation:spin 0.7s linear infinite;flex-shrink:0;}
 
-@keyframes pulse{
-  0%,100%{box-shadow:0 0 0 2px rgba(16,185,129,0.2);}
-  50%{box-shadow:0 0 0 5px rgba(16,185,129,0.06);}
-}
-
-@keyframes spin{
-  to{transform:rotate(360deg);}
-}
-
-.spinner{
-  width:15px;height:15px;
-  border:2px solid rgba(29,78,216,0.3);
-  border-top-color:#1d4ed8;
-  border-radius:50%;
-  animation:spin 0.7s linear infinite;
-  flex-shrink:0;
-}
-
-/* ─── Responsive ─────────────────────────────────────────── */
 @media(max-width:600px){
   .header-inner{padding:22px 16px 72px;}
   .header-brand h1{font-size:18px;}
@@ -640,13 +197,18 @@ input::placeholder{color:var(--slate-400);}
 
 </style>
 </head>
-
 <body>
+
+<!-- Auth loading overlay — shown until Firebase resolves the user -->
+<div id="authLoading">
+  <div class="load-logo">💳</div>
+  <div class="load-spinner"></div>
+  <p>Verifying your session…</p>
+</div>
 
 <!-- ══════════════ HEADER ══════════════ -->
 <div class="header">
   <div class="header-inner">
-
     <div class="header-brand">
       <div class="brand-icon">💳</div>
       <div>
@@ -654,7 +216,6 @@ input::placeholder{color:var(--slate-400);}
         <p>Officer Collection Portal</p>
       </div>
     </div>
-
     <div class="header-right">
       <div class="user-pill">
         <div class="pill-avatar" id="pillAvatar">O</div>
@@ -663,20 +224,15 @@ input::placeholder{color:var(--slate-400);}
           <span id="userRole">officer</span>
         </div>
       </div>
-      <button class="logout-btn" id="logoutBtn">
-        🚪 Sign Out
-      </button>
+      <button class="logout-btn" id="logoutBtn">🚪 Sign Out</button>
     </div>
-
   </div>
 </div>
 
 <!-- ══════════════ CONTAINER ══════════════ -->
 <div class="container">
 
-  <!-- Stats -->
   <div class="stats">
-
     <div class="stat-card">
       <div class="stat-icon-wrap">💰</div>
       <div>
@@ -684,7 +240,6 @@ input::placeholder{color:var(--slate-400);}
         <p>Total Revenue</p>
       </div>
     </div>
-
     <div class="stat-card">
       <div class="stat-icon-wrap">🔄</div>
       <div>
@@ -692,12 +247,9 @@ input::placeholder{color:var(--slate-400);}
         <p>Total Transactions</p>
       </div>
     </div>
-
   </div>
 
-  <!-- Payment Card -->
   <div class="card">
-
     <div class="switch">
       <button id="mpesaTab" class="active">📱 &nbsp;M-PESA</button>
       <button id="cashTab">💵 &nbsp;Cash</button>
@@ -707,309 +259,289 @@ input::placeholder{color:var(--slate-400);}
 
       <!-- M-PESA SECTION -->
       <div id="mpesaSection">
-
         <div class="section-label">Payment Details</div>
-
         <div class="form-group">
           <label>Amount (KES)</label>
           <input type="number" id="amount" value="50" placeholder="Enter amount" required>
         </div>
-
         <div class="form-group">
           <label>Revenue Stream</label>
           <div class="revenue-grid">
-
-            <div class="revenue-btn active" data-type="Parking">
-              <span class="rev-icon">🚗</span>
-              Parking
-            </div>
-
-            <div class="revenue-btn" data-type="Market Fee">
-              <span class="rev-icon">🛒</span>
-              Market Fee
-            </div>
-
-            <div class="revenue-btn" data-type="Cess">
-              <span class="rev-icon">📦</span>
-              Cess
-            </div>
-
-            <div class="revenue-btn" data-type="Business Permit">
-              <span class="rev-icon">🏢</span>
-              Business Permit
-            </div>
-
+            <div class="revenue-btn active" data-type="Parking"><span class="rev-icon">🚗</span>Parking</div>
+            <div class="revenue-btn" data-type="Market Fee"><span class="rev-icon">🛒</span>Market Fee</div>
+            <div class="revenue-btn" data-type="Cess"><span class="rev-icon">📦</span>Cess</div>
+            <div class="revenue-btn" data-type="Business Permit"><span class="rev-icon">🏢</span>Business Permit</div>
           </div>
         </div>
-
         <div class="form-group">
           <label>Vehicle Plate / Client ID</label>
           <input type="text" id="plate" placeholder="e.g. KCA 123A" required>
         </div>
-
         <div class="form-group">
           <label>Phone Number</label>
           <input type="text" id="phone" placeholder="e.g. 0712 345 678" required>
         </div>
-
         <div class="form-group">
           <label>Ward</label>
           <select id="ward">
-            <option>Kanduyi</option>
-            <option>Kimilili</option>
-            <option>Webuye East</option>
-            <option>Webuye West</option>
-            <option>Tongaren</option>
-            <option>Sirisia</option>
+            <option>Kanduyi</option><option>Kimilili</option><option>Webuye East</option>
+            <option>Webuye West</option><option>Tongaren</option><option>Sirisia</option>
           </select>
         </div>
-
-        <button type="submit" class="submit-btn mpesa-btn" id="payBtn">
-          📱 &nbsp;LIPA NA M-PESA
-        </button>
-
+        <button type="submit" class="submit-btn mpesa-btn" id="payBtn">📱 &nbsp;LIPA NA M-PESA</button>
       </div>
 
       <!-- CASH SECTION -->
       <div id="cashSection" class="hidden">
-
         <div class="section-label">Cash Collection</div>
-
         <div class="form-group">
           <label>Cash Amount (KES)</label>
           <input type="number" id="cashAmount" placeholder="Enter amount collected">
         </div>
-
         <div class="form-group">
           <label>Client ID / Reference</label>
           <input type="text" id="cashClient" placeholder="e.g. Client name or ID">
         </div>
-
-        <button type="button" class="submit-btn cash-btn" id="cashBtn">
-          💵 &nbsp;RECORD CASH PAYMENT
-        </button>
-
+        <button type="button" class="submit-btn cash-btn" id="cashBtn">💵 &nbsp;RECORD CASH PAYMENT</button>
       </div>
 
     </form>
 
     <div id="statusBox" class="status-box"></div>
-
   </div>
 
-  <!-- Transactions -->
   <div class="transactions">
-
     <div class="tx-header">
       <div>
         <h3>Recent Transactions</h3>
         <p>Your session's collected payments</p>
       </div>
-      <span class="tx-live">
-        <span class="tx-live-dot"></span>
-        Live
-      </span>
+      <span class="tx-live"><span class="tx-live-dot"></span>Live</span>
     </div>
-
-    <div class="tx-body" id="transactionsList">
-      <!-- filled by JS -->
-    </div>
-
+    <div class="tx-body" id="transactionsList"></div>
   </div>
 
 </div>
 
-<script>
+<!-- ══════════════ FIREBASE + APP SCRIPT ══════════════ -->
+<!--
+  ╔══════════════════════════════════════════════════════╗
+  ║  IMPORTANT: Replace the firebaseConfig object below  ║
+  ║  with your own project's config from the Firebase    ║
+  ║  Console → Project Settings → Your apps → SDK setup  ║
+  ╚══════════════════════════════════════════════════════╝
+-->
+<script type="module">
 
-const username = localStorage.getItem('username');
-const role     = localStorage.getItem('userRole');
+import { initializeApp }             from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut }
+                                     from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-if(!username){ window.location.href = '/login.html'; }
-if(role === 'admin'){ window.location.href = '/admin.html'; }
+/* ── 🔧 YOUR FIREBASE CONFIG ──────────────────────────
+   Replace every value below with the ones from your
+   Firebase project console.
+──────────────────────────────────────────────────── */
+const firebaseConfig = {
+  apiKey:            "AIzaSyCWqMIaIVpXwi7Am2tFvy4Tq2PGtpYgp_M",
+  authDomain:        "bungoma-pay.firebaseapp.com",
+  projectId:         "bungoma-pay",
+  storageBucket:     "bungoma-pay.firebasestorage.app",
+  messagingSenderId: "1022710513801",
+  appId:             "1:1022710513801:web:4cf8ee7c786e6c333cc658"
+};
 
-// Populate header user info
-document.getElementById('loggedUser').innerText = username || 'Officer';
-document.getElementById('userRole').innerText   = role    || 'officer';
-document.getElementById('pillAvatar').innerText = (username || 'O')[0].toUpperCase();
+const app  = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db   = getFirestore(app);
 
-document.getElementById('logoutBtn').addEventListener('click', () => {
-  localStorage.clear();
-  window.location.href = '/login.html';
-});
+/* ── Auth guard ──────────────────────────────────────
+   onAuthStateChanged fires once on page load.
+   • No user  → redirect to login
+   • User is admin → redirect to admin dashboard
+   • User is officer → show the page
+──────────────────────────────────────────────────── */
+onAuthStateChanged(auth, async (user) => {
 
-let selectedRevenue = 'Parking';
+  if (!user) {
+    // Not logged in at all
+    window.location.href = '/login.html';
+    return;
+  }
 
-const statusBox = document.getElementById('statusBox');
+  // Fetch the user's role from Firestore (collection: "users", doc: uid)
+  let role     = 'officer';
+  let username = user.email ? user.email.split('@')[0] : 'Officer';
 
-function showStatus(message, type){
-  let icon = type === 'success' ? '✅' : type === 'error' ? '❌' : '';
-  const spinner = type === 'loading' ? '<div class="spinner"></div>' : '';
-  statusBox.className = `status-box ${type}`;
-  statusBox.innerHTML = `${spinner}${icon ? `<span>${icon}</span>` : ''} ${message}`;
-}
+  try {
+    const snap = await getDoc(doc(db, 'users', user.uid));
+    if (snap.exists()) {
+      const data = snap.data();
+      role       = data.role     || 'officer';
+      username   = data.username || data.name || username;
+    }
+  } catch(e) {
+    console.warn('Could not fetch user profile from Firestore:', e);
+  }
 
-// Revenue buttons
-const revenueButtons = document.querySelectorAll('.revenue-btn');
-revenueButtons.forEach(btn => {
-  btn.addEventListener('click', () => {
-    revenueButtons.forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    selectedRevenue = btn.dataset.type;
+  // Admins belong in admin.html
+  if (role === 'admin') {
+    window.location.href = '/admin.html';
+    return;
+  }
+
+  // ── Populate UI ────────────────────────────────────
+  document.getElementById('loggedUser').innerText  = username;
+  document.getElementById('userRole').innerText    = role;
+  document.getElementById('pillAvatar').innerText  = username[0].toUpperCase();
+
+  // Hide the loading overlay and show the app
+  document.getElementById('authLoading').style.display = 'none';
+
+  // ── Sign out ────────────────────────────────────────
+  document.getElementById('logoutBtn').addEventListener('click', async () => {
+    await signOut(auth);
+    window.location.href = '/login.html';
   });
-});
 
-// Tab switching
-const mpesaTab    = document.getElementById('mpesaTab');
-const cashTab     = document.getElementById('cashTab');
-const mpesaSection = document.getElementById('mpesaSection');
-const cashSection  = document.getElementById('cashSection');
+  // ── Attach Firebase ID token to every API request ─
+  // This lets your backend verify the user via Firebase Admin SDK.
+  async function authFetch(url, options = {}) {
+    const token = await user.getIdToken();
+    return fetch(url, {
+      ...options,
+      headers: {
+        ...(options.headers || {}),
+        'Authorization': 'Bearer ' + token,
+        'Content-Type':  'application/json'
+      }
+    });
+  }
 
-mpesaTab.onclick = () => {
-  mpesaTab.classList.add('active');
-  cashTab.classList.remove('active');
-  mpesaSection.classList.remove('hidden');
-  cashSection.classList.add('hidden');
-};
+  // ── App logic ──────────────────────────────────────
 
-cashTab.onclick = () => {
-  cashTab.classList.add('active');
-  mpesaTab.classList.remove('active');
-  cashSection.classList.remove('hidden');
-  mpesaSection.classList.add('hidden');
-};
+  let selectedRevenue = 'Parking';
+  const statusBox = document.getElementById('statusBox');
 
-// ─── Transaction helpers ──────────────────────────────────
-function txIconClass(method){
-  if(!method) return 'other';
-  const m = method.toUpperCase();
-  if(m === 'M-PESA') return 'mpesa';
-  if(m === 'CASH')   return 'cash';
-  return 'other';
-}
+  function showStatus(message, type) {
+    const sp   = type === 'loading' ? '<div class="spinner"></div>' : '';
+    const icon = type === 'success' ? '✅ ' : type === 'error' ? '❌ ' : '';
+    statusBox.className = 'status-box ' + type;
+    statusBox.innerHTML = sp + icon + message;
+  }
 
-function txIcon(method){
-  if(!method) return '💳';
-  const m = method.toUpperCase();
-  if(m === 'M-PESA') return '📱';
-  if(m === 'CASH')   return '💵';
-  return '💳';
-}
+  // Revenue buttons
+  document.querySelectorAll('.revenue-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.revenue-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      selectedRevenue = btn.dataset.type;
+    });
+  });
 
-// ─── Load transactions ────────────────────────────────────
-async function loadTransactions(){
-  try{
-    const res  = await fetch('/api/transactions');
-    const data = await res.json();
+  // Tab switching
+  const mpesaTab     = document.getElementById('mpesaTab');
+  const cashTab      = document.getElementById('cashTab');
+  const mpesaSection = document.getElementById('mpesaSection');
+  const cashSection  = document.getElementById('cashSection');
 
-    const list = document.getElementById('transactionsList');
-    list.innerHTML = '';
+  mpesaTab.onclick = () => {
+    mpesaTab.classList.add('active');    cashTab.classList.remove('active');
+    mpesaSection.classList.remove('hidden'); cashSection.classList.add('hidden');
+  };
+  cashTab.onclick = () => {
+    cashTab.classList.add('active');     mpesaTab.classList.remove('active');
+    cashSection.classList.remove('hidden');  mpesaSection.classList.add('hidden');
+  };
 
-    if(!data || data.length === 0){
-      list.innerHTML = `
-        <div class="empty-state">
-          <div class="empty-icon">📭</div>
-          <p>No transactions recorded yet</p>
-        </div>`;
-      document.getElementById('totalAmount').innerText       = 'KES 0';
-      document.getElementById('totalTransactions').innerText = '0';
-      return;
-    }
+  // TX helpers
+  function txIconClass(m) { if(!m) return 'other'; m=m.toUpperCase(); if(m==='M-PESA') return 'mpesa'; if(m==='CASH') return 'cash'; return 'other'; }
+  function txEmoji(m)      { if(!m) return '💳'; m=m.toUpperCase(); if(m==='M-PESA') return '📱'; if(m==='CASH') return '💵'; return '💳'; }
 
-    let total = 0;
-    data.forEach(tx => {
-      total += Number(tx.amount || 0);
-      const cls    = txIconClass(tx.paymentMethod);
-      const icon   = txIcon(tx.paymentMethod);
-      const label  = tx.revenueType || tx.paymentMethod || 'Payment';
-      const sub    = tx.plate || tx.phone || '—';
-      const method = tx.paymentMethod || 'Other';
+  // Load transactions
+  async function loadTransactions() {
+    try {
+      const res  = await authFetch('/api/transactions');
+      const data = await res.json();
+      const list = document.getElementById('transactionsList');
+      list.innerHTML = '';
 
-      const item = document.createElement('div');
-      item.className = 'transaction-item';
-      item.innerHTML = `
-        <div class="tx-left">
-          <div class="tx-icon ${cls}">${icon}</div>
-          <div class="tx-details">
-            <strong>${label}</strong>
-            <span>${sub}</span>
+      if (!data || data.length === 0) {
+        list.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><p>No transactions recorded yet</p></div>';
+        document.getElementById('totalAmount').innerText       = 'KES 0';
+        document.getElementById('totalTransactions').innerText = '0';
+        return;
+      }
+
+      let total = 0;
+      data.forEach(tx => {
+        total += Number(tx.amount || 0);
+        const cls   = txIconClass(tx.paymentMethod);
+        const icon  = txEmoji(tx.paymentMethod);
+        const label = tx.revenueType || tx.paymentMethod || 'Payment';
+        const sub   = tx.plate || tx.phone || '—';
+        const meth  = tx.paymentMethod || 'Other';
+        const item  = document.createElement('div');
+        item.className = 'transaction-item';
+        item.innerHTML = `
+          <div class="tx-left">
+            <div class="tx-icon ${cls}">${icon}</div>
+            <div class="tx-details"><strong>${label}</strong><span>${sub}</span></div>
           </div>
-        </div>
-        <div class="tx-right">
-          <span class="badge">KES ${Number(tx.amount).toLocaleString()}</span>
-          <span class="method-tag ${cls}">${method}</span>
-        </div>`;
-      list.appendChild(item);
-    });
+          <div class="tx-right">
+            <span class="badge">KES ${Number(tx.amount).toLocaleString()}</span>
+            <span class="method-tag ${cls}">${meth}</span>
+          </div>`;
+        list.appendChild(item);
+      });
 
-    document.getElementById('totalAmount').innerText       = `KES ${total.toLocaleString()}`;
-    document.getElementById('totalTransactions').innerText = data.length.toLocaleString();
-
-  }catch(e){
-    document.getElementById('transactionsList').innerHTML = `
-      <div class="empty-state">
-        <div class="empty-icon">⚠️</div>
-        <p>Could not load transactions</p>
-      </div>`;
-  }
-}
-
-loadTransactions();
-setInterval(loadTransactions, 5000);
-
-// ─── Cash payment ─────────────────────────────────────────
-document.getElementById('cashBtn').addEventListener('click', async () => {
-  const amount = document.getElementById('cashAmount').value;
-  const client = document.getElementById('cashClient').value;
-
-  showStatus('Recording cash payment…', 'loading');
-
-  try{
-    const response = await fetch('/api/cash', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({amount, plate:client, ward:'Cash', revenueType:selectedRevenue})
-    });
-    const data = await response.json();
-
-    if(data.success){
-      showStatus('Cash payment recorded successfully!', 'success');
-      loadTransactions();
-    }else{
-      showStatus('Cash payment failed. Please try again.', 'error');
+      document.getElementById('totalAmount').innerText       = 'KES ' + total.toLocaleString();
+      document.getElementById('totalTransactions').innerText = data.length.toLocaleString();
+    } catch(e) {
+      document.getElementById('transactionsList').innerHTML =
+        '<div class="empty-state"><div class="empty-icon">⚠️</div><p>Could not load transactions</p></div>';
     }
-  }catch(e){
-    showStatus('Network error. Please check your connection.', 'error');
   }
-});
 
-// ─── M-PESA STK push ─────────────────────────────────────
-document.getElementById('paymentForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
+  loadTransactions();
+  setInterval(loadTransactions, 5000);
 
-  const amount = document.getElementById('amount').value;
-  const plate  = document.getElementById('plate').value;
-  const phone  = document.getElementById('phone').value;
-  const ward   = document.getElementById('ward').value;
+  // Cash payment
+  document.getElementById('cashBtn').addEventListener('click', async () => {
+    const amount = document.getElementById('cashAmount').value;
+    const client = document.getElementById('cashClient').value;
+    showStatus('Recording cash payment…', 'loading');
+    try {
+      const res  = await authFetch('/api/cash', {
+        method: 'POST',
+        body: JSON.stringify({ amount, plate: client, ward: 'Cash', revenueType: selectedRevenue })
+      });
+      const data = await res.json();
+      if (data.success) { showStatus('Cash payment recorded successfully!', 'success'); loadTransactions(); }
+      else              { showStatus('Cash payment failed. Please try again.', 'error'); }
+    } catch(e) { showStatus('Network error. Please check your connection.', 'error'); }
+  });
 
-  showStatus('Sending STK Push to customer…', 'loading');
+  // M-PESA STK push
+  document.getElementById('paymentForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const amount = document.getElementById('amount').value;
+    const plate  = document.getElementById('plate').value;
+    const phone  = document.getElementById('phone').value;
+    const ward   = document.getElementById('ward').value;
+    showStatus('Sending STK Push to customer…', 'loading');
+    try {
+      const res  = await authFetch('/api/pay', {
+        method: 'POST',
+        body: JSON.stringify({ amount, plate, phone, ward, revenueType: selectedRevenue })
+      });
+      const data = await res.json();
+      if (data.success) { showStatus('✓ STK Push sent — awaiting customer confirmation.', 'success'); }
+      else              { showStatus(data.error || 'Payment failed. Please try again.', 'error'); }
+    } catch(e) { showStatus('Network error. Please check your connection.', 'error'); }
+  });
 
-  try{
-    const response = await fetch('/api/pay', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({amount, plate, phone, ward, revenueType:selectedRevenue})
-    });
-    const data = await response.json();
-
-    if(data.success){
-      showStatus('✓ STK Push sent — awaiting customer confirmation.', 'success');
-    }else{
-      showStatus(data.error || 'Payment failed. Please try again.', 'error');
-    }
-  }catch(e){
-    showStatus('Network error. Please check your connection.', 'error');
-  }
-});
+}); // end onAuthStateChanged
 
 </script>
 
