@@ -1,275 +1,599 @@
+
 require('dotenv').config();
 
 const express = require('express');
 const axios = require('axios');
 const cors = require('cors');
-const path = require('path');
-const rateLimit = require('express-rate-limit');
-const helmet = require('helmet');
-
-// ─── Startup: Validate all required environment variables ────────────────────
-const REQUIRED_ENV = ['CONSUMER_KEY', 'CONSUMER_SECRET', 'SHORTCODE', 'PASSKEY', 'CALLBACK_URL'];
-const missing = REQUIRED_ENV.filter(k => !process.env[k]);
-if (missing.length) {
-    console.error(`[FATAL] Missing environment variables: ${missing.join(', ')}`);
-    process.exit(1);
-}
-
-const {
-    CONSUMER_KEY,
-    CONSUMER_SECRET,
-    SHORTCODE,
-    PASSKEY,
-    CALLBACK_URL,
-    PORT = 3000,
-    NODE_ENV = 'development'
-} = process.env;
+const moment = require('moment');
+const AfricasTalking = require('africastalking');
+const admin = require('firebase-admin');
+const session = require('express-session');
+const bcrypt = require('bcryptjs');
 
 const app = express();
 
-// ─── Trust proxy fix for Termux / Cloudflare tunnel ──────────────────────────
-// Fixes: ERR_ERL_UNEXPECTED_X_FORWARDED_FOR from express-rate-limit
-app.set('trust proxy', 1);
+app.use(cors());
+app.use(express.json());
+app.use(express.static('.'));
 
-// ─── Security Middleware ──────────────────────────────────────────────────────
-app.use(helmet({
-    contentSecurityPolicy: false
+// ================= SESSION =================
+
+app.use(session({
+  secret: 'bungoma-pay-secret-key',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: false,
+    maxAge: 1000 * 60 * 60 * 24
+  }
 }));
 
-app.use(cors({
-    origin: NODE_ENV === 'production'
-        ? process.env.ALLOWED_ORIGIN || false
-        : '*',
-    methods: ['GET', 'POST'],
-    allowedHeaders: ['Content-Type', 'Authorization']
-}));
+// ================= FIREBASE =================
 
-app.use(express.json({ limit: '10kb' }));
-app.use(express.static(__dirname, { index: false }));
+const serviceAccount = require('./firebase-key.json');
 
-// ─── Rate Limiting ────────────────────────────────────────────────────────────
-const stkLimiter = rateLimit({
-    windowMs: 60 * 1000,
-    max: 10,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { success: false, error: 'Too many payment requests. Please wait a moment.' }
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
 });
 
-const generalLimiter = rateLimit({
-    windowMs: 60 * 1000,
-    max: 60,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { success: false, error: 'Too many requests. Slow down.' }
+const db = admin.firestore();
+
+// ================= DEFAULT USERS =================
+
+async function createDefaultUsers() {
+
+  const usersRef = db.collection('users');
+
+  const adminDoc = await usersRef.doc('admin').get();
+
+  if (!adminDoc.exists) {
+
+    const hashedPassword = await bcrypt.hash('admin123', 10);
+
+    await usersRef.doc('admin').set({
+      username: 'admin',
+      password: hashedPassword,
+      role: 'admin',
+      createdAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    console.log('Default admin created');
+  }
+
+  const officerDoc = await usersRef.doc('officer').get();
+
+  if (!officerDoc.exists) {
+
+    const hashedPassword = await bcrypt.hash('officer123', 10);
+
+    await usersRef.doc('officer').set({
+      username: 'officer',
+      password: hashedPassword,
+      role: 'officer',
+      createdAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    console.log('Default officer created');
+  }
+}
+
+createDefaultUsers();
+
+// ================= AFRICASTALKING =================
+
+const at = AfricasTalking({
+  apiKey: process.env.AT_API_KEY,
+  username: process.env.AT_USERNAME
 });
 
-app.use('/api/', generalLimiter);
-app.use('/api/stkpush', stkLimiter);
+// ================= ENV =================
 
-// ─── In-memory transaction store ──────────────────────────────────────────────
-let transactions = [];
+const MPESA_CONSUMER_KEY = process.env.CONSUMER_KEY;
+const MPESA_CONSUMER_SECRET = process.env.CONSUMER_SECRET;
+const MPESA_PASSKEY = process.env.PASSKEY;
+const MPESA_SHORTCODE = process.env.SHORTCODE;
+const CALLBACK_URL = process.env.CALLBACK_URL;
+const PORT = process.env.PORT || 3000;
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-function formatPhone(phone) {
-    const cleaned = String(phone).replace(/\s+/g, '').replace(/^\+/, '');
-    if (/^254[17]\d{8}$/.test(cleaned)) return cleaned;
-    if (/^0[17]\d{8}$/.test(cleaned)) return '254' + cleaned.slice(1);
-    if (/^[17]\d{8}$/.test(cleaned)) return '254' + cleaned;
-    return null;
+const MPESA_ENV = 'sandbox';
+
+const MPESA_BASE_URL =
+  MPESA_ENV === 'sandbox'
+    ? 'https://sandbox.safaricom.co.ke'
+    : 'https://api.safaricom.co.ke';
+
+// ================= TOKEN =================
+
+async function getMpesaToken() {
+
+  const auth = Buffer.from(
+    `${MPESA_CONSUMER_KEY}:${MPESA_CONSUMER_SECRET}`
+  ).toString('base64');
+
+  const response = await axios.get(
+    `${MPESA_BASE_URL}/oauth/v1/generate?grant_type=client_credentials`,
+    {
+      headers: {
+        Authorization: `Basic ${auth}`
+      }
+    }
+  );
+
+  console.log('TOKEN RESULT =', response.data);
+
+  return response.data.access_token;
 }
 
-async function getSafaricomToken() {
-    const auth = Buffer.from(`${CONSUMER_KEY}:${CONSUMER_SECRET}`).toString('base64');
-    const res = await axios.get(
-        'https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials',
-        {
-            headers: { Authorization: `Basic ${auth}` },
-            timeout: 10000
-        }
-    );
-    if (!res.data?.access_token) throw new Error('No access_token in Safaricom response');
-    return res.data.access_token;
+// ================= SMS =================
+
+async function sendReceiptSMS(phone, amount, receipt, plate) {
+
+  let formattedPhone = String(phone);
+
+  if (formattedPhone.startsWith('254')) {
+    formattedPhone = '+' + formattedPhone;
+  }
+
+  if (formattedPhone.startsWith('0')) {
+    formattedPhone = '+254' + formattedPhone.substring(1);
+  }
+
+  const message =
+    `Bungoma County Revenue: KES ${amount} received for ${plate}. Receipt: ${receipt}`;
+
+  try {
+
+    const result = await at.SMS.send({
+      to: [formattedPhone],
+      message
+    });
+
+    console.log('SMS sent:', result);
+
+  } catch (err) {
+
+    console.log('SMS ERROR:', err.message);
+
+  }
 }
 
-function getStkCredentials() {
-    const timestamp = new Date().toISOString().replace(/[^0-9]/g, '').slice(0, 14);
-    const password = Buffer.from(`${SHORTCODE}${PASSKEY}${timestamp}`).toString('base64');
-    return { timestamp, password };
+// ================= TEMP STK STORAGE =================
+
+const pendingTransactions = {};
+
+// ================= AUTH =================
+
+function requireAuth(req, res, next) {
+
+  if (!req.session.user) {
+    return res.status(401).json({
+      success: false,
+      message: 'Unauthorized'
+    });
+  }
+
+  next();
 }
 
-function logTxn(type, data) {
-    const ts = new Date().toISOString();
-    console.log(`[${ts}] [${type}]`, JSON.stringify(data));
+function requireAdmin(req, res, next) {
+
+  if (!req.session.user) {
+    return res.status(401).json({
+      success: false,
+      message: 'Unauthorized'
+    });
+  }
+
+  if (req.session.user.role !== 'admin') {
+    return res.status(403).json({
+      success: false,
+      message: 'Admin access only'
+    });
+  }
+
+  next();
 }
 
-// ─── Routes ───────────────────────────────────────────────────────────────────
+// ================= ROUTES =================
+
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+  res.sendFile(__dirname + '/login.html');
 });
 
-// ─── STK Push ─────────────────────────────────────────────────────────────────
-app.post('/api/stkpush', async (req, res) => {
-    try {
-        const { phone, amount, service, ward, clientId } = req.body;
+// ================= LOGIN =================
 
-        if (!phone || !amount) {
-            return res.status(400).json({ success: false, error: 'phone and amount are required' });
-        }
+app.post('/api/login', async (req, res) => {
 
-        const formattedPhone = formatPhone(phone);
-        if (!formattedPhone) {
-            return res.status(400).json({
-                success: false,
-                error: 'Invalid phone number. Use 07XXXXXXXX or 2547XXXXXXXX'
-            });
-        }
+  try {
 
-        const parsedAmount = parseInt(amount, 10);
-        if (isNaN(parsedAmount) || parsedAmount < 1 || parsedAmount > 150000) {
-            return res.status(400).json({
-                success: false,
-                error: 'Amount must be between KES 1 and 150,000'
-            });
-        }
+    const { username, password } = req.body;
 
-        const token = await getSafaricomToken();
-        const { timestamp, password } = getStkCredentials();
-
-        const stkRes = await axios.post(
-            'https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest',
-            {
-                BusinessShortCode: SHORTCODE,
-                Password: password,
-                Timestamp: timestamp,
-                TransactionType: 'CustomerPayBillOnline',
-                Amount: parsedAmount,
-                PartyA: formattedPhone,
-                PartyB: SHORTCODE,
-                PhoneNumber: formattedPhone,
-                CallBackURL: CALLBACK_URL,
-                AccountReference: (clientId || 'BGM').toString().slice(0, 12),
-                TransactionDesc: `${service || 'Service'} - ${ward || 'N/A'}`.slice(0, 13)
-            },
-            {
-                headers: { Authorization: `Bearer ${token}` },
-                timeout: 15000
-            }
-        );
-
-        logTxn('STK_PUSH', {
-            phone: formattedPhone,
-            amount: parsedAmount,
-            service,
-            checkoutRequestID: stkRes.data.CheckoutRequestID
-        });
-
-        return res.status(200).json({ success: true, ...stkRes.data });
-
-    } catch (err) {
-        const safaricomError = err.response?.data;
-        logTxn('STK_ERROR', {
-            status: err.response?.status,
-            error: safaricomError || err.message
-        });
-        return res.status(502).json({
-            success: false,
-            error: safaricomError?.errorMessage || 'Payment initiation failed. Please try again.'
-        });
-    }
-});
-
-// ─── Record Cash ──────────────────────────────────────────────────────────────
-app.post('/api/cash', (req, res) => {
-    const { amount, service, ward, clientId, receipt } = req.body;
-
-    if (!amount) {
-        return res.status(400).json({ success: false, error: 'amount is required' });
+    if (!username || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Username and password required'
+      });
     }
 
-    const parsedAmount = parseFloat(amount);
-    if (isNaN(parsedAmount) || parsedAmount <= 0) {
-        return res.status(400).json({ success: false, error: 'amount must be a positive number' });
+    const userDoc = await db.collection('users')
+      .doc(username)
+      .get();
+
+    if (!userDoc.exists) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid credentials'
+      });
     }
 
-    const txn = {
-        id: Date.now(),
-        type: 'CASH',
-        amount: parsedAmount,
-        service: service || null,
-        ward: ward || null,
-        clientId: clientId || null,
-        receipt: receipt || 'BGM-' + Date.now(),
-        timestamp: new Date().toISOString()
+    const user = userDoc.data();
+
+    const validPassword = await bcrypt.compare(
+      password,
+      user.password
+    );
+
+    if (!validPassword) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid credentials'
+      });
+    }
+
+    req.session.user = {
+      username: user.username,
+      role: user.role
     };
 
-    transactions.push(txn);
-    logTxn('CASH', { amount: parsedAmount, service, receipt: txn.receipt });
-
-    return res.status(201).json({ success: true, transaction: txn });
-});
-
-// ─── M-Pesa Callback ──────────────────────────────────────────────────────────
-app.post('/api/callback', (req, res) => {
-    try {
-        const cb = req.body?.Body?.stkCallback;
-
-        if (!cb) {
-            console.warn('[WARN] /api/callback received malformed body');
-            return res.status(200).json({ ResultCode: 0, ResultDesc: 'Accepted' });
-        }
-
-        const { ResultCode, ResultDesc, CheckoutRequestID, CallbackMetadata } = cb;
-
-        if (ResultCode === 0) {
-            const items = CallbackMetadata?.Item || [];
-            const get = (name) => items.find(i => i.Name === name)?.Value ?? null;
-
-            const txn = {
-                id: Date.now(),
-                type: 'MPESA',
-                checkoutRequestID: CheckoutRequestID,
-                receipt: get('MpesaReceiptNumber'),
-                amount: get('Amount'),
-                phone: get('PhoneNumber'),
-                timestamp: new Date().toISOString()
-            };
-
-            transactions.push(txn);
-            logTxn('CALLBACK_SUCCESS', txn);
-        } else {
-            logTxn('CALLBACK_FAILED', { ResultCode, ResultDesc, CheckoutRequestID });
-        }
-
-        return res.status(200).json({ ResultCode: 0, ResultDesc: 'Success' });
-
-    } catch (err) {
-        console.error('[ERROR] /api/callback threw:', err.message);
-        return res.status(200).json({ ResultCode: 0, ResultDesc: 'Success' });
-    }
-});
-
-// ─── Get Transactions ─────────────────────────────────────────────────────────
-app.get('/api/transactions', (req, res) => {
-    return res.status(200).json({
-        success: true,
-        count: transactions.length,
-        transactions
+    return res.json({
+      success: true,
+      role: user.role,
+      username: user.username
     });
+
+  } catch (error) {
+
+    return res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
 });
 
-// ─── 404 Handler ──────────────────────────────────────────────────────────────
-app.use((req, res) => {
-    res.status(404).json({ success: false, error: 'Route not found' });
+// ================= LOGOUT =================
+
+app.post('/api/logout', (req, res) => {
+
+  req.session.destroy(() => {
+
+    return res.json({
+      success: true
+    });
+  });
 });
 
-// ─── Global Error Handler ─────────────────────────────────────────────────────
-app.use((err, req, res, next) => {
-    console.error('[UNHANDLED ERROR]', err);
-    res.status(500).json({ success: false, error: 'Internal server error' });
+// ================= CURRENT USER =================
+
+app.get('/api/me', requireAuth, (req, res) => {
+
+  return res.json({
+    success: true,
+    user: req.session.user
+  });
 });
 
-// ─── Start Server ─────────────────────────────────────────────────────────────
+// ================= PAY =================
+
+app.post('/api/pay', requireAuth, async (req, res) => {
+
+  try {
+
+    const {
+      phone,
+      amount,
+      plate,
+      ward,
+      revenueType
+    } = req.body;
+
+    if (!phone || !amount || !plate) {
+
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required fields'
+      });
+    }
+
+    let formattedPhone = String(phone);
+
+    if (formattedPhone.startsWith('0')) {
+      formattedPhone =
+        '254' + formattedPhone.substring(1);
+    }
+
+    if (formattedPhone.startsWith('+')) {
+      formattedPhone =
+        formattedPhone.substring(1);
+    }
+
+    const token = await getMpesaToken();
+
+    const timestamp =
+      moment().format('YYYYMMDDHHmmss');
+
+    const password = Buffer.from(
+      `${MPESA_SHORTCODE}${MPESA_PASSKEY}${timestamp}`
+    ).toString('base64');
+
+    const stkResponse = await axios.post(
+      `${MPESA_BASE_URL}/mpesa/stkpush/v1/processrequest`,
+      {
+        BusinessShortCode: MPESA_SHORTCODE,
+        Password: password,
+        Timestamp: timestamp,
+        TransactionType: 'CustomerPayBillOnline',
+        Amount: amount,
+        PartyA: formattedPhone,
+        PartyB: MPESA_SHORTCODE,
+        PhoneNumber: formattedPhone,
+        CallBackURL: CALLBACK_URL,
+        AccountReference: plate,
+        TransactionDesc: revenueType || 'Revenue Payment'
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    );
+
+    const checkoutId =
+      stkResponse.data.CheckoutRequestID;
+
+    pendingTransactions[checkoutId] = {
+      plate,
+      amount,
+      phone: formattedPhone,
+      ward,
+      revenueType,
+      createdBy: req.session.user.username,
+      createdAt: new Date()
+    };
+
+    console.log(
+      `STK SENT | ${plate} | KES${amount} | ${formattedPhone}`
+    );
+
+    return res.json({
+      success: true,
+      message: 'STK Push Sent'
+    });
+
+  } catch (error) {
+
+    console.log(
+      'STK ERROR:',
+      error.response?.data || error.message
+    );
+
+    return res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// ================= CALLBACK =================
+
+app.post('/api/callback', async (req, res) => {
+
+  try {
+
+    const callback =
+      req.body.Body.stkCallback;
+
+    const resultCode =
+      callback.ResultCode;
+
+    const checkoutId =
+      callback.CheckoutRequestID;
+
+    console.log(
+      `CALLBACK: ${checkoutId} | CODE ${resultCode}`
+    );
+
+    if (resultCode === 0) {
+
+      const items =
+        callback.CallbackMetadata.Item;
+
+      let amount = '';
+      let receipt = '';
+      let phone = '';
+
+      items.forEach(item => {
+
+        if (item.Name === 'Amount') {
+          amount = item.Value;
+        }
+
+        if (item.Name === 'MpesaReceiptNumber') {
+          receipt = item.Value;
+        }
+
+        if (item.Name === 'PhoneNumber') {
+          phone = item.Value;
+        }
+      });
+
+      const tx =
+        pendingTransactions[checkoutId];
+
+      const transactionData = {
+        amount,
+        receipt,
+        phone,
+        plate: tx?.plate || '',
+        ward: tx?.ward || '',
+        revenueType: tx?.revenueType || '',
+        paymentMethod: 'M-PESA',
+        createdBy: tx?.createdBy || '',
+        status: 'PAID',
+        createdAt:
+          admin.firestore.FieldValue.serverTimestamp()
+      };
+
+      await db.collection('transactions')
+        .add(transactionData);
+
+      await sendReceiptSMS(
+        phone,
+        amount,
+        receipt,
+        tx?.plate || 'Revenue Payment'
+      );
+
+      console.log(
+        `PAYMENT SUCCESS | ${receipt}`
+      );
+
+      delete pendingTransactions[checkoutId];
+    }
+
+    return res.json({
+      success: true
+    });
+
+  } catch (error) {
+
+    console.log(
+      'CALLBACK ERROR:',
+      error.message
+    );
+
+    return res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// ================= CASH PAYMENT =================
+
+app.post('/api/cash', requireAuth, async (req, res) => {
+
+  try {
+
+    const {
+      amount,
+      plate,
+      ward,
+      revenueType
+    } = req.body;
+
+    const receipt =
+      'CASH-' + Date.now();
+
+    await db.collection('transactions')
+      .add({
+        amount,
+        plate,
+        ward,
+        revenueType,
+        paymentMethod: 'CASH',
+        receipt,
+        createdBy: req.session.user.username,
+        status: 'PAID',
+        createdAt:
+          admin.firestore.FieldValue.serverTimestamp()
+      });
+
+    return res.json({
+      success: true,
+      receipt
+    });
+
+  } catch (error) {
+
+    return res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// ================= TRANSACTIONS =================
+
+app.get('/api/transactions', requireAuth, async (req, res) => {
+
+  try {
+
+    const snapshot =
+      await db.collection('transactions')
+      .orderBy('createdAt', 'desc')
+      .limit(50)
+      .get();
+
+    const transactions = [];
+
+    snapshot.forEach(doc => {
+
+      transactions.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+
+    return res.json(transactions);
+
+  } catch (error) {
+
+    return res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// ================= ADMIN STATS =================
+
+app.get('/api/admin/stats', requireAdmin, async (req, res) => {
+
+  try {
+
+    const snapshot =
+      await db.collection('transactions').get();
+
+    let totalRevenue = 0;
+
+    snapshot.forEach(doc => {
+      totalRevenue += Number(doc.data().amount || 0);
+    });
+
+    return res.json({
+      success: true,
+      totalTransactions: snapshot.size,
+      totalRevenue
+    });
+
+  } catch (error) {
+
+    return res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// ================= START =================
+
 app.listen(PORT, () => {
-    console.log(`[INFO] Bungoma Pay v1_7.0 running on port ${PORT} (${NODE_ENV})`);
+
+  console.log(
+    `Bungoma Pay v1.9.0 running on port ${PORT}`
+  );
+
+  console.log(
+    `Callback URL: ${CALLBACK_URL}`
+  );
 });

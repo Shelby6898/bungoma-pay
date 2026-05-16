@@ -1,503 +1,1017 @@
 
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bungoma County Government</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --green: #065f46;
-            --green-light: #d1fae5;
-            --green-mid: #059669;
-            --gold: #b45309;
-            --bg: #f8faf9;
-            --card: #ffffff;
-            --text: #111827;
-            --muted: #6b7280;
-            --border: #e5e7eb;
-            --error: #dc2626;
-            --error-bg: #fef2f2;
-            --blue: #1d4ed8;
-            --blue-bg: #eff6ff;
-            --radius: 12px;
-            --shadow: 0 1px 3px rgba(0,0,0,0.07), 0 4px 16px rgba(0,0,0,0.05);
-        }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bungoma Pay Officer Dashboard</title>
 
-        .header {
-            background: var(--green);
-            padding: 20px 16px 16px;
-            text-align: center;
-        }
-        .header h1 {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 22px; font-weight: 700; color: #fff;
-        }
-        .header p { font-size: 11px; color: rgba(255,255,255,0.75); margin-top: 3px; }
-        .status {
-            display: inline-flex; align-items: center; gap: 5px;
-            font-size: 10px; color: #6ee7b7; margin-top: 6px;
-            letter-spacing: 1px; text-transform: uppercase; font-weight: 500;
-        }
-        .status::before {
-            content: ''; width: 6px; height: 6px;
-            background: #6ee7b7; border-radius: 50%;
-            animation: pulse 2s infinite;
-        }
-        @keyframes pulse {
-            0%,100% { opacity:1; transform:scale(1); }
-            50% { opacity:0.5; transform:scale(1.3); }
-        }
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-        .container { max-width: 480px; margin: 0 auto; padding: 16px; }
+<style>
 
-        .stats-card {
-            background: var(--card); border-radius: var(--radius);
-            padding: 20px; display: grid; grid-template-columns: 1fr 1fr;
-            gap: 16px; box-shadow: var(--shadow); margin-bottom: 16px;
-            border: 1px solid var(--border);
-        }
-        .stat { text-align: center; }
-        .stat-value {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 28px; font-weight: 700; color: var(--green); line-height: 1;
-        }
-        .stat-label { font-size: 11px; color: var(--muted); margin-top: 4px; }
+*{margin:0;padding:0;box-sizing:border-box;}
 
-        .main-card {
-            background: var(--card); border-radius: var(--radius);
-            box-shadow: var(--shadow); border: 1px solid var(--border); overflow: hidden;
-        }
-        .tabs { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--border); }
-        .tab {
-            padding: 14px; background: none; border: none;
-            font-family: 'DM Sans', sans-serif; font-size: 13px;
-            font-weight: 500; color: var(--muted); cursor: pointer;
-            transition: all 0.2s; letter-spacing: 0.3px;
-        }
-        .tab.active {
-            color: var(--green); border-bottom: 2px solid var(--green);
-            background: rgba(6,95,70,0.03);
-        }
+:root{
+  --emerald-900:#064e3b;
+  --emerald-800:#065f46;
+  --emerald-700:#047857;
+  --emerald-600:#059669;
+  --emerald-500:#10b981;
+  --emerald-400:#34d399;
+  --emerald-100:#d1fae5;
+  --emerald-50:#ecfdf5;
+  --blue-600:#2563eb;
+  --blue-50:#eff6ff;
+  --slate-900:#0f172a;
+  --slate-800:#1e293b;
+  --slate-700:#334155;
+  --slate-600:#475569;
+  --slate-500:#64748b;
+  --slate-400:#94a3b8;
+  --slate-300:#cbd5e1;
+  --slate-200:#e2e8f0;
+  --slate-100:#f1f5f9;
+  --slate-50:#f8fafc;
+  --white:#ffffff;
+  --radius-xl:24px;
+  --radius-lg:18px;
+  --radius-md:13px;
+  --radius-sm:9px;
+  --shadow:0 4px 24px rgba(6,95,70,0.07),0 1px 4px rgba(0,0,0,0.04);
+  --shadow-raised:0 10px 36px rgba(6,95,70,0.13),0 2px 8px rgba(0,0,0,0.06);
+  --transition:all 0.22s cubic-bezier(0.4,0,0.2,1);
+}
 
-        .tab-content { padding: 20px; }
-        .hidden { display: none !important; }
+body{
+  font-family:'Poppins',sans-serif;
+  background:var(--slate-100);
+  color:var(--slate-800);
+  min-height:100vh;
+}
 
-        label {
-            display: block; font-size: 12px; font-weight: 500;
-            color: var(--muted); margin-bottom: 6px; margin-top: 14px;
-            text-transform: uppercase; letter-spacing: 0.5px;
-        }
-        label:first-child { margin-top: 0; }
+/* ─── Header ───────────────────────────────────────────── */
+.header{
+  background:linear-gradient(135deg,var(--emerald-900) 0%,var(--emerald-800) 55%,#076e4f 100%);
+  padding:0;
+  position:relative;
+  overflow:hidden;
+}
 
-        input, select {
-            width: 100%; padding: 11px 14px;
-            border: 1.5px solid var(--border); border-radius: 8px;
-            font-family: 'DM Sans', sans-serif; font-size: 15px;
-            color: var(--text); background: #fff;
-            transition: border-color 0.2s, box-shadow 0.2s; outline: none;
-        }
-        input:focus, select:focus {
-            border-color: var(--green);
-            box-shadow: 0 0 0 3px rgba(6,95,70,0.08);
-        }
+.header::before{
+  content:'';
+  position:absolute;
+  top:-120px;right:-100px;
+  width:380px;height:380px;
+  background:radial-gradient(circle,rgba(52,211,153,0.12) 0%,transparent 70%);
+  border-radius:50%;pointer-events:none;
+}
 
-        .streams { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        .stream {
-            padding: 10px 8px; border: 1.5px solid var(--border);
-            border-radius: 8px; background: #fff;
-            font-family: 'DM Sans', sans-serif; font-size: 13px;
-            color: var(--muted); cursor: pointer; text-align: center;
-            transition: all 0.18s; font-weight: 400;
-            -webkit-tap-highlight-color: transparent;
-        }
-        .stream:hover, .stream:active { border-color: var(--green); color: var(--green); }
-        .stream.active {
-            border-color: var(--green); background: var(--green-light);
-            color: var(--green); font-weight: 600;
-        }
+.header::after{
+  content:'';
+  position:absolute;
+  bottom:-60px;left:-60px;
+  width:220px;height:220px;
+  background:radial-gradient(circle,rgba(52,211,153,0.07) 0%,transparent 70%);
+  border-radius:50%;pointer-events:none;
+}
 
-        .btn {
-            width: 100%; padding: 15px; border: none; border-radius: 10px;
-            font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600;
-            cursor: pointer; margin-top: 20px; transition: all 0.2s;
-            -webkit-tap-highlight-color: transparent;
-        }
-        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
-        .btn-mpesa { background: var(--green); color: #fff; }
-        .btn-mpesa:active { background: #047857; }
-        .btn-cash { background: var(--blue); color: #fff; }
-        .btn-cash:active { background: #1e40af; }
+.header-inner{
+  max-width:1060px;
+  margin:auto;
+  padding:28px 24px 80px;
+  position:relative;
+  z-index:1;
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:18px;
+}
 
-        .msg {
-            margin-top: 14px; padding: 12px 14px; border-radius: 8px;
-            font-size: 13px; line-height: 1.5; display: none;
-        }
-        .msg.show { display: block; }
-        .msg.success { background: var(--green-light); color: var(--green); border: 1px solid #a7f3d0; }
-        .msg.error { background: var(--error-bg); color: var(--error); border: 1px solid #fecaca; }
-        .msg.info { background: var(--blue-bg); color: var(--blue); border: 1px solid #bfdbfe; }
+.header-brand{
+  display:flex;
+  align-items:center;
+  gap:14px;
+}
 
-        .txn-section {
-            margin-top: 16px; background: var(--card); border-radius: var(--radius);
-            box-shadow: var(--shadow); border: 1px solid var(--border); overflow: hidden;
-        }
-        .txn-header {
-            padding: 14px 16px; border-bottom: 1px solid var(--border);
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        .txn-header h3 { font-size: 13px; font-weight: 600; }
-        .refresh-btn {
-            font-size: 11px; color: var(--green); cursor: pointer;
-            background: none; border: none; font-family: 'DM Sans', sans-serif;
-            padding: 4px 8px;
-        }
-        .txn-list { max-height: 220px; overflow-y: auto; }
-        .txn-item {
-            padding: 12px 16px; border-bottom: 1px solid var(--border);
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        .txn-item:last-child { border-bottom: none; }
-        .txn-left { display: flex; flex-direction: column; gap: 2px; }
-        .txn-service { font-size: 13px; font-weight: 500; }
-        .txn-meta { font-size: 11px; color: var(--muted); }
-        .txn-right { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
-        .txn-amount { font-size: 14px; font-weight: 600; color: var(--green); }
-        .txn-type {
-            font-size: 10px; padding: 2px 7px;
-            border-radius: 20px; font-weight: 500;
-        }
-        .txn-type.mpesa { background: var(--green-light); color: var(--green); }
-        .txn-type.cash { background: var(--blue-bg); color: var(--blue); }
-        .txn-empty { padding: 24px; text-align: center; font-size: 13px; color: var(--muted); }
+.brand-icon{
+  width:50px;height:50px;
+  background:linear-gradient(135deg,var(--emerald-500),var(--emerald-400));
+  border-radius:15px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:24px;
+  box-shadow:0 6px 20px rgba(16,185,129,0.35);
+  flex-shrink:0;
+}
 
-        .footer {
-            text-align: center; color: var(--muted); font-size: 11px;
-            margin-top: 20px; padding-bottom: 24px;
-        }
-    </style>
+.header-brand h1{
+  font-size:22px;
+  font-weight:700;
+  color:var(--white);
+  letter-spacing:-0.3px;
+  line-height:1.2;
+}
+
+.header-brand p{
+  font-size:11.5px;
+  color:rgba(255,255,255,0.55);
+  font-weight:400;
+  margin-top:2px;
+}
+
+.header-right{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+.user-pill{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  background:rgba(255,255,255,0.1);
+  border:1px solid rgba(255,255,255,0.15);
+  padding:9px 16px;
+  border-radius:50px;
+  backdrop-filter:blur(10px);
+}
+
+.pill-avatar{
+  width:30px;height:30px;
+  border-radius:8px;
+  background:linear-gradient(135deg,var(--emerald-500),var(--emerald-700));
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:700;
+  color:var(--white);
+  flex-shrink:0;
+}
+
+.pill-info strong{
+  display:block;
+  font-size:13px;
+  font-weight:600;
+  color:var(--white);
+}
+
+.pill-info span{
+  font-size:11px;
+  color:var(--emerald-400);
+  font-weight:500;
+  text-transform:capitalize;
+}
+
+.logout-btn{
+  display:flex;align-items:center;gap:7px;
+  padding:10px 18px;
+  border:1px solid rgba(255,255,255,0.2);
+  border-radius:50px;
+  background:rgba(255,255,255,0.08);
+  color:rgba(255,255,255,0.8);
+  font-family:'Poppins',sans-serif;
+  font-size:12.5px;
+  font-weight:600;
+  cursor:pointer;
+  transition:var(--transition);
+  backdrop-filter:blur(10px);
+}
+
+.logout-btn:hover{
+  background:rgba(239,68,68,0.18);
+  border-color:rgba(239,68,68,0.3);
+  color:#fca5a5;
+}
+
+/* ─── Container ────────────────────────────────────────── */
+.container{
+  max-width:1060px;
+  margin:auto;
+  padding:0 20px 48px;
+}
+
+/* ─── Stat Cards (overlap header) ─────────────────────── */
+.stats{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+  margin-top:-54px;
+  margin-bottom:24px;
+}
+
+.stat-card{
+  background:var(--white);
+  padding:22px 24px;
+  border-radius:var(--radius-xl);
+  box-shadow:var(--shadow-raised);
+  display:flex;
+  align-items:center;
+  gap:16px;
+  border:1px solid rgba(226,232,240,0.5);
+  transition:var(--transition);
+  animation:fadeInUp 0.4s ease both;
+}
+
+.stat-card:nth-child(1){animation-delay:0.05s;}
+.stat-card:nth-child(2){animation-delay:0.12s;}
+
+.stat-card:hover{
+  transform:translateY(-2px);
+  box-shadow:0 14px 40px rgba(6,95,70,0.13);
+}
+
+.stat-icon-wrap{
+  width:50px;height:50px;
+  border-radius:14px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;
+  flex-shrink:0;
+}
+
+.stat-card:nth-child(1) .stat-icon-wrap{background:var(--emerald-50);color:var(--emerald-700);}
+.stat-card:nth-child(2) .stat-icon-wrap{background:var(--blue-50);color:var(--blue-600);}
+
+.stat-card h2{
+  font-size:26px;
+  font-weight:700;
+  color:var(--slate-900);
+  letter-spacing:-0.6px;
+  line-height:1;
+}
+
+.stat-card p{
+  font-size:12px;
+  color:var(--slate-500);
+  font-weight:500;
+  margin-top:3px;
+}
+
+/* ─── Main Card ─────────────────────────────────────────── */
+.card{
+  background:var(--white);
+  padding:28px;
+  border-radius:var(--radius-xl);
+  box-shadow:var(--shadow);
+  border:1px solid rgba(226,232,240,0.5);
+  margin-bottom:20px;
+  animation:fadeInUp 0.4s ease 0.18s both;
+}
+
+/* ─── Tab Switch ─────────────────────────────────────────── */
+.switch{
+  display:flex;
+  background:var(--slate-100);
+  border-radius:var(--radius-lg);
+  padding:5px;
+  margin-bottom:26px;
+  gap:4px;
+}
+
+.switch button{
+  flex:1;
+  padding:13px;
+  border:none;
+  background:none;
+  border-radius:var(--radius-md);
+  font-family:'Poppins',sans-serif;
+  font-size:13.5px;
+  font-weight:600;
+  cursor:pointer;
+  color:var(--slate-500);
+  transition:var(--transition);
+  display:flex;align-items:center;justify-content:center;gap:7px;
+}
+
+.switch button.active{
+  background:var(--white);
+  color:var(--emerald-700);
+  box-shadow:0 2px 10px rgba(0,0,0,0.07);
+}
+
+/* ─── Form ───────────────────────────────────────────────── */
+.form-group{
+  margin-bottom:18px;
+}
+
+label{
+  display:block;
+  margin-bottom:7px;
+  font-size:13px;
+  font-weight:600;
+  color:var(--slate-700);
+}
+
+input,select{
+  width:100%;
+  padding:14px 16px;
+  border:1.5px solid var(--slate-200);
+  border-radius:var(--radius-md);
+  background:var(--slate-50);
+  font-family:'Poppins',sans-serif;
+  font-size:14px;
+  color:var(--slate-800);
+  transition:var(--transition);
+  outline:none;
+}
+
+input:focus,select:focus{
+  border-color:var(--emerald-500);
+  background:var(--white);
+  box-shadow:0 0 0 3px rgba(16,185,129,0.1);
+}
+
+input::placeholder{color:var(--slate-400);}
+
+/* ─── Revenue Type Grid ──────────────────────────────────── */
+.revenue-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+
+.revenue-btn{
+  padding:14px 12px;
+  border-radius:var(--radius-md);
+  border:1.5px solid var(--slate-200);
+  background:var(--slate-50);
+  cursor:pointer;
+  text-align:center;
+  font-family:'Poppins',sans-serif;
+  font-size:13px;
+  font-weight:600;
+  color:var(--slate-600);
+  transition:var(--transition);
+  display:flex;flex-direction:column;align-items:center;gap:5px;
+}
+
+.revenue-btn:hover{
+  border-color:var(--emerald-400);
+  color:var(--emerald-700);
+  background:var(--emerald-50);
+}
+
+.revenue-btn.active{
+  background:var(--emerald-50);
+  border-color:var(--emerald-600);
+  color:var(--emerald-700);
+  box-shadow:0 0 0 3px rgba(16,185,129,0.08);
+}
+
+.revenue-btn .rev-icon{font-size:20px;}
+
+/* ─── Submit Buttons ─────────────────────────────────────── */
+.submit-btn{
+  width:100%;
+  padding:16px;
+  border:none;
+  border-radius:var(--radius-lg);
+  font-family:'Poppins',sans-serif;
+  font-size:15px;
+  font-weight:700;
+  cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:9px;
+  transition:var(--transition);
+  letter-spacing:0.2px;
+  margin-top:6px;
+}
+
+.mpesa-btn{
+  background:linear-gradient(135deg,var(--blue-600),#1d4ed8);
+  color:var(--white);
+  box-shadow:0 6px 20px rgba(37,99,235,0.3);
+}
+
+.mpesa-btn:hover{
+  transform:translateY(-1px);
+  box-shadow:0 10px 28px rgba(37,99,235,0.38);
+}
+
+.mpesa-btn:active{transform:translateY(0);}
+
+.cash-btn{
+  background:linear-gradient(135deg,var(--emerald-600),var(--emerald-700));
+  color:var(--white);
+  box-shadow:0 6px 20px rgba(5,150,105,0.3);
+}
+
+.cash-btn:hover{
+  transform:translateY(-1px);
+  box-shadow:0 10px 28px rgba(5,150,105,0.38);
+}
+
+.cash-btn:active{transform:translateY(0);}
+
+/* ─── Status Box ─────────────────────────────────────────── */
+.status-box{
+  margin-top:18px;
+  padding:14px 18px;
+  border-radius:var(--radius-md);
+  font-size:13.5px;
+  font-weight:500;
+  display:none;
+  align-items:center;
+  gap:10px;
+  animation:fadeInUp 0.25s ease;
+}
+
+.success{
+  display:flex;
+  background:#f0fdf4;
+  color:#166534;
+  border:1px solid #bbf7d0;
+}
+
+.error{
+  display:flex;
+  background:#fef2f2;
+  color:#991b1b;
+  border:1px solid #fecaca;
+}
+
+.loading{
+  display:flex;
+  background:#eff6ff;
+  color:#1d4ed8;
+  border:1px solid #bfdbfe;
+}
+
+/* ─── Transactions ───────────────────────────────────────── */
+.transactions{
+  background:var(--white);
+  border-radius:var(--radius-xl);
+  box-shadow:var(--shadow);
+  border:1px solid rgba(226,232,240,0.5);
+  overflow:hidden;
+  animation:fadeInUp 0.4s ease 0.24s both;
+}
+
+.tx-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:22px 24px 16px;
+  border-bottom:1px solid var(--slate-100);
+}
+
+.tx-header h3{
+  font-size:15px;
+  font-weight:700;
+  color:var(--slate-900);
+}
+
+.tx-header p{
+  font-size:12px;
+  color:var(--slate-400);
+  margin-top:2px;
+}
+
+.tx-live{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  font-size:11.5px;
+  font-weight:600;
+  color:var(--emerald-600);
+  background:var(--emerald-50);
+  padding:5px 12px;
+  border-radius:20px;
+}
+
+.tx-live-dot{
+  width:6px;height:6px;
+  background:var(--emerald-500);
+  border-radius:50%;
+  animation:pulse 2s infinite;
+}
+
+.tx-body{
+  padding:14px 18px 18px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  max-height:400px;
+  overflow-y:auto;
+}
+
+.tx-body::-webkit-scrollbar{width:4px;}
+.tx-body::-webkit-scrollbar-track{background:transparent;}
+.tx-body::-webkit-scrollbar-thumb{background:var(--slate-200);border-radius:4px;}
+
+.transaction-item{
+  padding:13px 16px;
+  border:1px solid var(--slate-100);
+  border-radius:var(--radius-md);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  background:var(--slate-50);
+  transition:var(--transition);
+}
+
+.transaction-item:hover{
+  background:var(--white);
+  border-color:var(--slate-200);
+  box-shadow:0 2px 10px rgba(0,0,0,0.05);
+}
+
+.tx-left{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  min-width:0;
+}
+
+.tx-icon{
+  width:38px;height:38px;
+  border-radius:11px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;
+  flex-shrink:0;
+}
+
+.tx-icon.mpesa{background:#fffbeb;color:#92400e;}
+.tx-icon.cash{background:var(--emerald-50);color:var(--emerald-700);}
+.tx-icon.other{background:#f0f9ff;color:#0369a1;}
+
+.tx-details strong{
+  display:block;
+  font-size:13px;
+  font-weight:600;
+  color:var(--slate-800);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+
+.tx-details span{
+  font-size:11.5px;
+  color:var(--slate-400);
+}
+
+.tx-right{
+  display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;
+}
+
+.badge{
+  background:var(--emerald-50);
+  color:var(--emerald-700);
+  padding:5px 13px;
+  border-radius:20px;
+  font-size:13px;
+  font-weight:700;
+  letter-spacing:-0.2px;
+}
+
+.method-tag{
+  font-size:10px;
+  font-weight:600;
+  padding:2px 8px;
+  border-radius:20px;
+  text-transform:uppercase;
+  letter-spacing:0.4px;
+}
+
+.method-tag.mpesa{background:#fffbeb;color:#92400e;}
+.method-tag.cash{background:var(--emerald-50);color:#065f46;}
+.method-tag.other{background:#f0f9ff;color:#0369a1;}
+
+.empty-state{
+  text-align:center;padding:48px 20px;color:var(--slate-400);
+}
+
+.empty-state .empty-icon{font-size:38px;margin-bottom:10px;}
+.empty-state p{font-size:13.5px;font-weight:500;}
+
+.hidden{display:none;}
+
+/* ─── Section divider label ──────────────────────────────── */
+.section-label{
+  font-size:11px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:1.2px;
+  color:var(--slate-400);
+  margin-bottom:14px;
+  display:flex;align-items:center;gap:8px;
+}
+
+.section-label::after{
+  content:'';
+  flex:1;
+  height:1px;
+  background:var(--slate-200);
+}
+
+/* ─── Animations ─────────────────────────────────────────── */
+@keyframes fadeInUp{
+  from{opacity:0;transform:translateY(14px);}
+  to{opacity:1;transform:translateY(0);}
+}
+
+@keyframes pulse{
+  0%,100%{box-shadow:0 0 0 2px rgba(16,185,129,0.2);}
+  50%{box-shadow:0 0 0 5px rgba(16,185,129,0.06);}
+}
+
+@keyframes spin{
+  to{transform:rotate(360deg);}
+}
+
+.spinner{
+  width:15px;height:15px;
+  border:2px solid rgba(29,78,216,0.3);
+  border-top-color:#1d4ed8;
+  border-radius:50%;
+  animation:spin 0.7s linear infinite;
+  flex-shrink:0;
+}
+
+/* ─── Responsive ─────────────────────────────────────────── */
+@media(max-width:600px){
+  .header-inner{padding:22px 16px 72px;}
+  .header-brand h1{font-size:18px;}
+  .stats{grid-template-columns:1fr 1fr;gap:12px;}
+  .stat-card{padding:18px 16px;gap:12px;}
+  .stat-card h2{font-size:22px;}
+  .container{padding:0 14px 40px;}
+  .card{padding:20px 16px;}
+  .revenue-grid{grid-template-columns:1fr 1fr;}
+}
+
+</style>
 </head>
+
 <body>
 
+<!-- ══════════════ HEADER ══════════════ -->
 <div class="header">
-    <h1>Bungoma County Government</h1>
-    <p>Revenue Collection System v1.7.0 | Cloud Sync Enabled</p>
-    <div class="status">System Online</div>
+  <div class="header-inner">
+
+    <div class="header-brand">
+      <div class="brand-icon">💳</div>
+      <div>
+        <h1>Bungoma County Revenue</h1>
+        <p>Officer Collection Portal</p>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <div class="user-pill">
+        <div class="pill-avatar" id="pillAvatar">O</div>
+        <div class="pill-info">
+          <strong id="loggedUser">Officer</strong>
+          <span id="userRole">officer</span>
+        </div>
+      </div>
+      <button class="logout-btn" id="logoutBtn">
+        🚪 Sign Out
+      </button>
+    </div>
+
+  </div>
 </div>
 
+<!-- ══════════════ CONTAINER ══════════════ -->
 <div class="container">
 
-    <div class="stats-card">
-        <div class="stat">
-            <div class="stat-value">KES <span id="totalToday">0</span></div>
-            <div class="stat-label">Total Collected Today</div>
-        </div>
-        <div class="stat">
-            <div class="stat-value" id="txnCount">0</div>
-            <div class="stat-label">Transactions</div>
-        </div>
+  <!-- Stats -->
+  <div class="stats">
+
+    <div class="stat-card">
+      <div class="stat-icon-wrap">💰</div>
+      <div>
+        <h2 id="totalAmount">KES 0</h2>
+        <p>Total Revenue</p>
+      </div>
     </div>
 
-    <div class="main-card">
-        <div class="tabs">
-            <button class="tab active" id="tabMpesa">M-PESA</button>
-            <button class="tab" id="tabCash">CASH</button>
+    <div class="stat-card">
+      <div class="stat-icon-wrap">🔄</div>
+      <div>
+        <h2 id="totalTransactions">0</h2>
+        <p>Total Transactions</p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Payment Card -->
+  <div class="card">
+
+    <div class="switch">
+      <button id="mpesaTab" class="active">📱 &nbsp;M-PESA</button>
+      <button id="cashTab">💵 &nbsp;Cash</button>
+    </div>
+
+    <form id="paymentForm">
+
+      <!-- M-PESA SECTION -->
+      <div id="mpesaSection">
+
+        <div class="section-label">Payment Details</div>
+
+        <div class="form-group">
+          <label>Amount (KES)</label>
+          <input type="number" id="amount" value="50" placeholder="Enter amount" required>
         </div>
 
-        <!-- M-PESA Tab -->
-        <div id="mpesaTab" class="tab-content">
-            <label>Phone Number</label>
-            <input type="tel" id="phone" placeholder="0712345678" value="0745822565">
+        <div class="form-group">
+          <label>Revenue Stream</label>
+          <div class="revenue-grid">
 
-            <label>Amount (KES)</label>
-            <input type="number" id="amount" placeholder="50" value="50" min="1" max="150000">
-
-            <label>Revenue Stream</label>
-            <div class="streams" id="mpesaStreams">
-                <button class="stream active" data-stream="Market fee">Market fee</button>
-                <button class="stream" data-stream="Parking">Parking</button>
-                <button class="stream" data-stream="Cess">Cess</button>
-                <button class="stream" data-stream="BodaBoda">BodaBoda</button>
-                <button class="stream" data-stream="Business license">Business license</button>
-                <button class="stream" data-stream="Land Rate">Land Rate</button>
+            <div class="revenue-btn active" data-type="Parking">
+              <span class="rev-icon">🚗</span>
+              Parking
             </div>
 
-            <label>Plate No / Client ID</label>
-            <input type="text" id="clientId" placeholder="Plate No / Client ID">
-
-            <label>Ward</label>
-            <select id="ward">
-                <option>Kanduyi</option>
-                <option>Tongaren</option>
-                <option>Webuye East</option>
-                <option>Webuye West</option>
-                <option>Bumula</option>
-                <option>Kabuchai</option>
-            </select>
-
-            <button class="btn btn-mpesa" id="mpesaBtn">💳 LIPA SASA (M-PESA)</button>
-            <div class="msg" id="mpesaMsg"></div>
-        </div>
-
-        <!-- Cash Tab -->
-        <div id="cashTab" class="tab-content hidden">
-            <label>Amount (KES)</label>
-            <input type="number" id="cashAmount" placeholder="50" min="1">
-
-            <label>Revenue Stream</label>
-            <div class="streams" id="cashStreams">
-                <button class="stream active" data-stream="Market fee">Market fee</button>
-                <button class="stream" data-stream="Parking">Parking</button>
-                <button class="stream" data-stream="Cess">Cess</button>
-                <button class="stream" data-stream="BodaBoda">BodaBoda</button>
-                <button class="stream" data-stream="Business license">Business license</button>
-                <button class="stream" data-stream="Land Rate">Land Rate</button>
+            <div class="revenue-btn" data-type="Market Fee">
+              <span class="rev-icon">🛒</span>
+              Market Fee
             </div>
 
-            <label>Client ID</label>
-            <input type="text" id="cashClientId" placeholder="Client ID">
+            <div class="revenue-btn" data-type="Cess">
+              <span class="rev-icon">📦</span>
+              Cess
+            </div>
 
-            <label>Ward</label>
-            <select id="cashWard">
-                <option>Kanduyi</option>
-                <option>Tongaren</option>
-                <option>Webuye East</option>
-                <option>Webuye West</option>
-                <option>Bumula</option>
-                <option>Kabuchai</option>
-            </select>
+            <div class="revenue-btn" data-type="Business Permit">
+              <span class="rev-icon">🏢</span>
+              Business Permit
+            </div>
 
-            <button class="btn btn-cash" id="cashBtn">💵 RECORD CASH</button>
-            <div class="msg" id="cashMsg"></div>
+          </div>
         </div>
+
+        <div class="form-group">
+          <label>Vehicle Plate / Client ID</label>
+          <input type="text" id="plate" placeholder="e.g. KCA 123A" required>
+        </div>
+
+        <div class="form-group">
+          <label>Phone Number</label>
+          <input type="text" id="phone" placeholder="e.g. 0712 345 678" required>
+        </div>
+
+        <div class="form-group">
+          <label>Ward</label>
+          <select id="ward">
+            <option>Kanduyi</option>
+            <option>Kimilili</option>
+            <option>Webuye East</option>
+            <option>Webuye West</option>
+            <option>Tongaren</option>
+            <option>Sirisia</option>
+          </select>
+        </div>
+
+        <button type="submit" class="submit-btn mpesa-btn" id="payBtn">
+          📱 &nbsp;LIPA NA M-PESA
+        </button>
+
+      </div>
+
+      <!-- CASH SECTION -->
+      <div id="cashSection" class="hidden">
+
+        <div class="section-label">Cash Collection</div>
+
+        <div class="form-group">
+          <label>Cash Amount (KES)</label>
+          <input type="number" id="cashAmount" placeholder="Enter amount collected">
+        </div>
+
+        <div class="form-group">
+          <label>Client ID / Reference</label>
+          <input type="text" id="cashClient" placeholder="e.g. Client name or ID">
+        </div>
+
+        <button type="button" class="submit-btn cash-btn" id="cashBtn">
+          💵 &nbsp;RECORD CASH PAYMENT
+        </button>
+
+      </div>
+
+    </form>
+
+    <div id="statusBox" class="status-box"></div>
+
+  </div>
+
+  <!-- Transactions -->
+  <div class="transactions">
+
+    <div class="tx-header">
+      <div>
+        <h3>Recent Transactions</h3>
+        <p>Your session's collected payments</p>
+      </div>
+      <span class="tx-live">
+        <span class="tx-live-dot"></span>
+        Live
+      </span>
     </div>
 
-    <div class="txn-section">
-        <div class="txn-header">
-            <h3>Recent Transactions</h3>
-            <button class="refresh-btn" id="refreshBtn">↻ Refresh</button>
-        </div>
-        <div class="txn-list" id="txnList">
-            <div class="txn-empty">No transactions yet today</div>
-        </div>
+    <div class="tx-body" id="transactionsList">
+      <!-- filled by JS -->
     </div>
 
-    <div class="footer">Bungoma Pay v1.7.0 | Secure | Cloud-Enabled | © Elphaz Shelby</div>
+  </div>
+
 </div>
 
 <script>
-(function () {
-    'use strict';
 
-    var API = window.location.origin;
-    var mpesaStream = 'Market fee';
-    var cashStream  = 'Market fee';
-    var totalAmount = 0;
-    var txnCountVal = 0;
+const username = localStorage.getItem('username');
+const role     = localStorage.getItem('userRole');
 
-    // ── Helper: show message ───────────────────────────────────────────────────
-    function showMsg(id, text, type) {
-        var el = document.getElementById(id);
-        if (!el) return;
-        el.textContent = text;
-        el.className = 'msg show ' + type;
-        setTimeout(function () { el.className = 'msg'; }, 7000);
+if(!username){ window.location.href = '/login.html'; }
+if(role === 'admin'){ window.location.href = '/admin.html'; }
+
+// Populate header user info
+document.getElementById('loggedUser').innerText = username || 'Officer';
+document.getElementById('userRole').innerText   = role    || 'officer';
+document.getElementById('pillAvatar').innerText = (username || 'O')[0].toUpperCase();
+
+document.getElementById('logoutBtn').addEventListener('click', () => {
+  localStorage.clear();
+  window.location.href = '/login.html';
+});
+
+let selectedRevenue = 'Parking';
+
+const statusBox = document.getElementById('statusBox');
+
+function showStatus(message, type){
+  let icon = type === 'success' ? '✅' : type === 'error' ? '❌' : '';
+  const spinner = type === 'loading' ? '<div class="spinner"></div>' : '';
+  statusBox.className = `status-box ${type}`;
+  statusBox.innerHTML = `${spinner}${icon ? `<span>${icon}</span>` : ''} ${message}`;
+}
+
+// Revenue buttons
+const revenueButtons = document.querySelectorAll('.revenue-btn');
+revenueButtons.forEach(btn => {
+  btn.addEventListener('click', () => {
+    revenueButtons.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedRevenue = btn.dataset.type;
+  });
+});
+
+// Tab switching
+const mpesaTab    = document.getElementById('mpesaTab');
+const cashTab     = document.getElementById('cashTab');
+const mpesaSection = document.getElementById('mpesaSection');
+const cashSection  = document.getElementById('cashSection');
+
+mpesaTab.onclick = () => {
+  mpesaTab.classList.add('active');
+  cashTab.classList.remove('active');
+  mpesaSection.classList.remove('hidden');
+  cashSection.classList.add('hidden');
+};
+
+cashTab.onclick = () => {
+  cashTab.classList.add('active');
+  mpesaTab.classList.remove('active');
+  cashSection.classList.remove('hidden');
+  mpesaSection.classList.add('hidden');
+};
+
+// ─── Transaction helpers ──────────────────────────────────
+function txIconClass(method){
+  if(!method) return 'other';
+  const m = method.toUpperCase();
+  if(m === 'M-PESA') return 'mpesa';
+  if(m === 'CASH')   return 'cash';
+  return 'other';
+}
+
+function txIcon(method){
+  if(!method) return '💳';
+  const m = method.toUpperCase();
+  if(m === 'M-PESA') return '📱';
+  if(m === 'CASH')   return '💵';
+  return '💳';
+}
+
+// ─── Load transactions ────────────────────────────────────
+async function loadTransactions(){
+  try{
+    const res  = await fetch('/api/transactions');
+    const data = await res.json();
+
+    const list = document.getElementById('transactionsList');
+    list.innerHTML = '';
+
+    if(!data || data.length === 0){
+      list.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">📭</div>
+          <p>No transactions recorded yet</p>
+        </div>`;
+      document.getElementById('totalAmount').innerText       = 'KES 0';
+      document.getElementById('totalTransactions').innerText = '0';
+      return;
     }
 
-    // ── Helper: update counters ────────────────────────────────────────────────
-    function bumpStats(amount) {
-        totalAmount += parseFloat(amount) || 0;
-        txnCountVal += 1;
-        document.getElementById('totalToday').textContent = totalAmount.toLocaleString();
-        document.getElementById('txnCount').textContent = txnCountVal;
+    let total = 0;
+    data.forEach(tx => {
+      total += Number(tx.amount || 0);
+      const cls    = txIconClass(tx.paymentMethod);
+      const icon   = txIcon(tx.paymentMethod);
+      const label  = tx.revenueType || tx.paymentMethod || 'Payment';
+      const sub    = tx.plate || tx.phone || '—';
+      const method = tx.paymentMethod || 'Other';
+
+      const item = document.createElement('div');
+      item.className = 'transaction-item';
+      item.innerHTML = `
+        <div class="tx-left">
+          <div class="tx-icon ${cls}">${icon}</div>
+          <div class="tx-details">
+            <strong>${label}</strong>
+            <span>${sub}</span>
+          </div>
+        </div>
+        <div class="tx-right">
+          <span class="badge">KES ${Number(tx.amount).toLocaleString()}</span>
+          <span class="method-tag ${cls}">${method}</span>
+        </div>`;
+      list.appendChild(item);
+    });
+
+    document.getElementById('totalAmount').innerText       = `KES ${total.toLocaleString()}`;
+    document.getElementById('totalTransactions').innerText = data.length.toLocaleString();
+
+  }catch(e){
+    document.getElementById('transactionsList').innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">⚠️</div>
+        <p>Could not load transactions</p>
+      </div>`;
+  }
+}
+
+loadTransactions();
+setInterval(loadTransactions, 5000);
+
+// ─── Cash payment ─────────────────────────────────────────
+document.getElementById('cashBtn').addEventListener('click', async () => {
+  const amount = document.getElementById('cashAmount').value;
+  const client = document.getElementById('cashClient').value;
+
+  showStatus('Recording cash payment…', 'loading');
+
+  try{
+    const response = await fetch('/api/cash', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({amount, plate:client, ward:'Cash', revenueType:selectedRevenue})
+    });
+    const data = await response.json();
+
+    if(data.success){
+      showStatus('Cash payment recorded successfully!', 'success');
+      loadTransactions();
+    }else{
+      showStatus('Cash payment failed. Please try again.', 'error');
     }
+  }catch(e){
+    showStatus('Network error. Please check your connection.', 'error');
+  }
+});
 
-    // ── Tab switching ──────────────────────────────────────────────────────────
-    document.getElementById('tabMpesa').addEventListener('click', function () {
-        document.getElementById('tabMpesa').classList.add('active');
-        document.getElementById('tabCash').classList.remove('active');
-        document.getElementById('mpesaTab').classList.remove('hidden');
-        document.getElementById('cashTab').classList.add('hidden');
+// ─── M-PESA STK push ─────────────────────────────────────
+document.getElementById('paymentForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const amount = document.getElementById('amount').value;
+  const plate  = document.getElementById('plate').value;
+  const phone  = document.getElementById('phone').value;
+  const ward   = document.getElementById('ward').value;
+
+  showStatus('Sending STK Push to customer…', 'loading');
+
+  try{
+    const response = await fetch('/api/pay', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({amount, plate, phone, ward, revenueType:selectedRevenue})
     });
+    const data = await response.json();
 
-    document.getElementById('tabCash').addEventListener('click', function () {
-        document.getElementById('tabCash').classList.add('active');
-        document.getElementById('tabMpesa').classList.remove('active');
-        document.getElementById('cashTab').classList.remove('hidden');
-        document.getElementById('mpesaTab').classList.add('hidden');
-    });
-
-    // ── Stream buttons ─────────────────────────────────────────────────────────
-    document.getElementById('mpesaStreams').addEventListener('click', function (e) {
-        var btn = e.target.closest('.stream');
-        if (!btn) return;
-        document.querySelectorAll('#mpesaStreams .stream').forEach(function (s) {
-            s.classList.remove('active');
-        });
-        btn.classList.add('active');
-        mpesaStream = btn.getAttribute('data-stream');
-    });
-
-    document.getElementById('cashStreams').addEventListener('click', function (e) {
-        var btn = e.target.closest('.stream');
-        if (!btn) return;
-        document.querySelectorAll('#cashStreams .stream').forEach(function (s) {
-            s.classList.remove('active');
-        });
-        btn.classList.add('active');
-        cashStream = btn.getAttribute('data-stream');
-    });
-
-    // ── Refresh button ─────────────────────────────────────────────────────────
-    document.getElementById('refreshBtn').addEventListener('click', loadStats);
-
-    // ── Load transactions from server ──────────────────────────────────────────
-    function loadStats() {
-        fetch(API + '/api/transactions')
-            .then(function (r) { return r.json(); })
-            .then(function (data) {
-                if (!data.success) return;
-
-                var today = new Date().toDateString();
-                var todayTxns = data.transactions.filter(function (t) {
-                    return new Date(t.timestamp).toDateString() === today;
-                });
-
-                totalAmount = todayTxns.reduce(function (sum, t) {
-                    return sum + (parseFloat(t.amount) || 0);
-                }, 0);
-                txnCountVal = todayTxns.length;
-
-                document.getElementById('totalToday').textContent = totalAmount.toLocaleString();
-                document.getElementById('txnCount').textContent = txnCountVal;
-
-                var list = document.getElementById('txnList');
-                if (todayTxns.length === 0) {
-                    list.innerHTML = '<div class="txn-empty">No transactions yet today</div>';
-                    return;
-                }
-
-                var recent = todayTxns.slice().reverse().slice(0, 20);
-                list.innerHTML = recent.map(function (t) {
-                    var typeClass = t.type === 'CASH' ? 'cash' : 'mpesa';
-                    return '<div class="txn-item">' +
-                        '<div class="txn-left">' +
-                            '<div class="txn-service">' + (t.service || 'Payment') + '</div>' +
-                            '<div class="txn-meta">' + (t.ward || '') + ' • ' + (t.clientId || t.receipt || '—') + '</div>' +
-                        '</div>' +
-                        '<div class="txn-right">' +
-                            '<div class="txn-amount">KES ' + parseFloat(t.amount).toLocaleString() + '</div>' +
-                            '<span class="txn-type ' + typeClass + '">' + t.type + '</span>' +
-                        '</div>' +
-                    '</div>';
-                }).join('');
-            })
-            .catch(function (e) { console.error('loadStats error:', e); });
+    if(data.success){
+      showStatus('✓ STK Push sent — awaiting customer confirmation.', 'success');
+    }else{
+      showStatus(data.error || 'Payment failed. Please try again.', 'error');
     }
+  }catch(e){
+    showStatus('Network error. Please check your connection.', 'error');
+  }
+});
 
-    // ── M-PESA STK Push ────────────────────────────────────────────────────────
-    document.getElementById('mpesaBtn').addEventListener('click', function () {
-        var phone    = document.getElementById('phone').value.trim();
-        var amount   = document.getElementById('amount').value.trim();
-        var ward     = document.getElementById('ward').value;
-        var clientId = document.getElementById('clientId').value.trim();
-        var btn      = document.getElementById('mpesaBtn');
-
-        if (!phone || !amount) {
-            showMsg('mpesaMsg', 'Phone and amount are required', 'error');
-            return;
-        }
-
-        btn.disabled = true;
-        btn.textContent = 'PROCESSING…';
-        showMsg('mpesaMsg', 'Sending STK Push to ' + phone + '…', 'info');
-
-        fetch(API + '/api/stkpush', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                phone: phone,
-                amount: amount,
-                service: mpesaStream,
-                ward: ward,
-                clientId: clientId
-            })
-        })
-        .then(function (r) { return r.json(); })
-        .then(function (data) {
-            if (data.success) {
-                showMsg('mpesaMsg', '✅ STK Push sent! Check phone for M-Pesa PIN prompt.', 'success');
-                bumpStats(amount);
-                setTimeout(loadStats, 5000);
-            } else {
-                showMsg('mpesaMsg', '❌ Failed: ' + (data.error || 'Unknown error'), 'error');
-            }
-        })
-        .catch(function () {
-            showMsg('mpesaMsg', '❌ Network error. Is the server running?', 'error');
-        })
-        .finally(function () {
-            btn.disabled = false;
-            btn.textContent = '💳 LIPA SASA (M-PESA)';
-        });
-    });
-
-    // ── Record Cash ────────────────────────────────────────────────────────────
-    document.getElementById('cashBtn').addEventListener('click', function () {
-        var amount   = document.getElementById('cashAmount').value.trim();
-        var ward     = document.getElementById('cashWard').value;
-        var clientId = document.getElementById('cashClientId').value.trim();
-        var btn      = document.getElementById('cashBtn');
-
-        if (!amount) {
-            showMsg('cashMsg', 'Amount is required', 'error');
-            return;
-        }
-
-        btn.disabled = true;
-        btn.textContent = 'SAVING…';
-
-        fetch(API + '/api/cash', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                amount: amount,
-                service: cashStream,
-                ward: ward,
-                clientId: clientId,
-                receipt: 'BGM-' + Date.now()
-            })
-        })
-        .then(function (r) { return r.json(); })
-        .then(function (data) {
-            if (data.success) {
-                showMsg('cashMsg', '✅ Cash recorded! KES ' + amount + ' for ' + cashStream, 'success');
-                document.getElementById('cashAmount').value = '';
-                document.getElementById('cashClientId').value = '';
-                bumpStats(amount);
-                loadStats();
-            } else {
-                showMsg('cashMsg', '❌ Failed: ' + (data.error || 'Unknown'), 'error');
-            }
-        })
-        .catch(function () {
-            showMsg('cashMsg', '❌ Network error', 'error');
-        })
-        .finally(function () {
-            btn.disabled = false;
-            btn.textContent = '💵 RECORD CASH';
-        });
-    });
-
-    // ── Init ───────────────────────────────────────────────────────────────────
-    loadStats();
-    setInterval(loadStats, 30000);
-
-})();
 </script>
+
 </body>
 </html>
