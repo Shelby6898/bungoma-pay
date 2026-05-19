@@ -3,50 +3,857 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bungoma County Revenue Collection v1.7.0</title>
+<title>Bungoma Pay Officer Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
-*{margin:0;padding:0;box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f5}.header{background:linear-gradient(135deg,#0F5132,#198754);color:white;padding:20px;text-align:center}.header h1{font-size:18px;font-weight:600}.header p{font-size:12px;opacity:.9;margin-top:4px}.status{color:#4ade80;font-size:11px;margin-top:5px}.container{max-width:500px;margin:0 auto;padding:15px}.stats{background:white;border-radius:12px;padding:20px;margin-bottom:15px;display:grid;grid-template-columns:1fr 1fr;gap:20px;box-shadow:0 2px 8px rgba(0,0,0,.1)}.stat{text-align:center}.stat-value{font-size:24px;font-weight:700;color:#0d4f3c}.stat-label{font-size:12px;color:#6c757d;margin-top:5px}.card{margin:16px;padding:16px;background:white;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.1)}.tabs{display:flex;margin-bottom:16px;border-bottom:2px solid #e5e5e5}.tab{flex:1;padding:12px;background:none;border:none;border-bottom:3px solid transparent;cursor:pointer;font-size:14px;color:#666}.tab.active{border-bottom-color:#198754;color:#198754;font-weight:600}.form-group{margin-bottom:15px}.form-group label{display:block;font-size:13px;color:#333;margin-bottom:8px;font-weight:500}input,select{width:100%;padding:12px;margin:8px 0;border:1px solid #ddd;border-radius:8px;font-size:14px}.radio-group{display:grid;grid-template-columns:1fr 1fr;gap:10px}.radio-item{position:relative}.radio-item input{position:absolute;opacity:0}.radio-item label{display:block;padding:12px;border:2px solid #e5e5e5;border-radius:8px;text-align:center;cursor:pointer;font-size:13px}.radio-item input:checked+label{border-color:#198754;background:#f0fdf4;color:#0d4f3c;font-weight:600}.btn{width:100%;padding:14px;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer}.btn-mpesa{background:#0d4f3c;color:white}.btn-cash{background:#1e40af;color:white}.footer{text-align:center;padding:20px;font-size:11px;color:#999}.hidden{display:none}
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --g900:#064e3b;--g800:#065f46;--g700:#047857;--g600:#059669;
+  --g500:#10b981;--g400:#34d399;--g100:#d1fae5;--g50:#ecfdf5;
+  --b600:#2563eb;--b50:#eff6ff;
+  --s900:#0f172a;--s800:#1e293b;--s700:#334155;--s600:#475569;
+  --s500:#64748b;--s400:#94a3b8;--s300:#cbd5e1;--s200:#e2e8f0;--s100:#f1f5f9;--s50:#f8fafc;
+  --white:#fff;
+  --r-xl:24px;--r-lg:18px;--r-md:13px;--r-sm:9px;
+  --shadow:0 4px 24px rgba(6,95,70,0.07),0 1px 4px rgba(0,0,0,0.04);
+  --shadow-r:0 10px 36px rgba(6,95,70,0.13),0 2px 8px rgba(0,0,0,0.06);
+  --tx:all 0.22s cubic-bezier(0.4,0,0.2,1);
+}
+body{font-family:'Poppins',sans-serif;background:var(--s100);color:var(--s800);min-height:100vh;}
+
+/* Auth loading */
+#authLoading{position:fixed;inset:0;background:linear-gradient(135deg,var(--g900),var(--g800));display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;gap:18px;}
+#authLoading .load-logo{width:60px;height:60px;background:linear-gradient(135deg,var(--g500),var(--g400));border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:28px;box-shadow:0 8px 24px rgba(16,185,129,0.4);}
+#authLoading p{color:rgba(255,255,255,0.7);font-size:13px;font-weight:500;}
+.load-spinner{width:28px;height:28px;border:3px solid rgba(255,255,255,0.2);border-top-color:var(--g400);border-radius:50%;animation:spin 0.8s linear infinite;}
+
+/* Broadcast banner */
+#broadcastBanner{
+  background:linear-gradient(135deg,#7c3aed,#6d28d9);color:white;
+  padding:14px 20px;display:none;align-items:center;gap:12px;
+  position:sticky;top:0;z-index:100;cursor:pointer;
+  animation:slideDown 0.3s ease;
+}
+#broadcastBanner.show{display:flex;}
+.bc-icon{font-size:20px;flex-shrink:0;}
+.bc-text{flex:1;font-size:13.5px;font-weight:500;}
+.bc-text strong{display:block;font-size:12px;opacity:0.8;margin-bottom:2px;}
+.bc-close{background:rgba(255,255,255,0.2);border:none;color:white;width:28px;height:28px;border-radius:8px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.bc-badge{background:#ef4444;color:white;border-radius:50%;width:20px;height:20px;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+
+/* Offline banner */
+#offlineBanner{background:#f59e0b;color:white;padding:10px 20px;text-align:center;font-size:13px;font-weight:600;display:none;}
+#offlineBanner.show{display:block;animation:slideDown 0.3s ease;}
+#syncBtn{background:rgba(255,255,255,0.25);border:none;color:white;padding:4px 12px;border-radius:20px;font-family:'Poppins',sans-serif;font-size:12px;font-weight:700;cursor:pointer;margin-left:10px;}
+
+@keyframes slideDown{from{opacity:0;transform:translateY(-10px);}to{opacity:1;transform:translateY(0);}}
+
+/* Header */
+.header{background:linear-gradient(135deg,var(--g900) 0%,var(--g800) 55%,#076e4f 100%);position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-120px;right:-100px;width:380px;height:380px;background:radial-gradient(circle,rgba(52,211,153,0.12) 0%,transparent 70%);border-radius:50%;pointer-events:none;}
+.header-inner{max-width:1060px;margin:auto;padding:28px 24px 80px;position:relative;z-index:1;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:18px;}
+.header-brand{display:flex;align-items:center;gap:14px;}
+.brand-icon{width:50px;height:50px;background:linear-gradient(135deg,var(--g500),var(--g400));border-radius:15px;display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 6px 20px rgba(16,185,129,0.35);flex-shrink:0;}
+.header-brand h1{font-size:22px;font-weight:700;color:var(--white);letter-spacing:-0.3px;}
+.header-brand p{font-size:11.5px;color:rgba(255,255,255,0.55);margin-top:2px;}
+.header-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.user-pill{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);padding:9px 16px;border-radius:50px;backdrop-filter:blur(10px);}
+.pill-avatar{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--g500),var(--g700));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--white);flex-shrink:0;}
+.pill-info strong{display:block;font-size:13px;font-weight:600;color:var(--white);}
+.pill-info span{font-size:11px;color:var(--g400);font-weight:500;}
+.hdr-btn{display:flex;align-items:center;gap:7px;padding:10px 16px;border:1px solid rgba(255,255,255,0.2);border-radius:50px;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.8);font-family:'Poppins',sans-serif;font-size:12.5px;font-weight:600;cursor:pointer;transition:var(--tx);backdrop-filter:blur(10px);}
+.hdr-btn:hover{background:rgba(239,68,68,0.18);border-color:rgba(239,68,68,0.3);color:#fca5a5;}
+.hdr-settings-btn:hover{background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.3);color:white;}
+
+/* Container */
+.container{max-width:1060px;margin:auto;padding:0 20px 48px;}
+
+/* Stats */
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:-54px;margin-bottom:24px;}
+.stat-card{background:var(--white);padding:22px 24px;border-radius:var(--r-xl);box-shadow:var(--shadow-r);display:flex;align-items:center;gap:16px;border:1px solid rgba(226,232,240,0.5);transition:var(--tx);animation:fadeInUp 0.4s ease both;}
+.stat-card:nth-child(1){animation-delay:0.05s;}.stat-card:nth-child(2){animation-delay:0.12s;}
+.stat-card:hover{transform:translateY(-2px);box-shadow:0 14px 40px rgba(6,95,70,0.13);}
+.stat-icon-wrap{width:50px;height:50px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;}
+.stat-card:nth-child(1) .stat-icon-wrap{background:var(--g50);}
+.stat-card:nth-child(2) .stat-icon-wrap{background:var(--b50);}
+.stat-card h2{font-size:26px;font-weight:700;color:var(--s900);letter-spacing:-0.6px;line-height:1;}
+.stat-card p{font-size:12px;color:var(--s500);font-weight:500;margin-top:3px;}
+
+/* Card */
+.card{background:var(--white);padding:28px;border-radius:var(--r-xl);box-shadow:var(--shadow);border:1px solid rgba(226,232,240,0.5);margin-bottom:20px;animation:fadeInUp 0.4s ease 0.18s both;}
+
+/* Tab switch */
+.switch{display:flex;background:var(--s100);border-radius:var(--r-lg);padding:5px;margin-bottom:26px;gap:4px;}
+.switch button{flex:1;padding:13px;border:none;background:none;border-radius:var(--r-md);font-family:'Poppins',sans-serif;font-size:13.5px;font-weight:600;cursor:pointer;color:var(--s500);transition:var(--tx);display:flex;align-items:center;justify-content:center;gap:7px;}
+.switch button.active{background:var(--white);color:var(--g700);box-shadow:0 2px 10px rgba(0,0,0,0.07);}
+
+/* Form */
+.form-group{margin-bottom:18px;}
+label{display:block;margin-bottom:7px;font-size:13px;font-weight:600;color:var(--s700);}
+input,select{width:100%;padding:14px 16px;border:1.5px solid var(--s200);border-radius:var(--r-md);background:var(--s50);font-family:'Poppins',sans-serif;font-size:14px;color:var(--s800);transition:var(--tx);outline:none;}
+input:focus,select:focus{border-color:var(--g500);background:var(--white);box-shadow:0 0 0 3px rgba(16,185,129,0.1);}
+input::placeholder{color:var(--s400);}
+
+/* Plate input with camera */
+.plate-wrap{position:relative;}
+.plate-wrap input{padding-right:48px;}
+.cam-btn{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:22px;opacity:0.7;transition:var(--tx);}
+.cam-btn:hover{opacity:1;transform:translateY(-50%) scale(1.1);}
+
+/* Revenue grid */
+.revenue-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.revenue-btn{padding:14px 12px;border-radius:var(--r-md);border:1.5px solid var(--s200);background:var(--s50);cursor:pointer;text-align:center;font-family:'Poppins',sans-serif;font-size:13px;font-weight:600;color:var(--s600);transition:var(--tx);display:flex;flex-direction:column;align-items:center;gap:5px;}
+.revenue-btn:hover{border-color:var(--g400);color:var(--g700);background:var(--g50);}
+.revenue-btn.active{background:var(--g50);border-color:var(--g600);color:var(--g700);box-shadow:0 0 0 3px rgba(16,185,129,0.08);}
+.revenue-btn .rev-icon{font-size:20px;}
+
+/* Submit buttons */
+.submit-btn{width:100%;padding:16px;border:none;border-radius:var(--r-lg);font-family:'Poppins',sans-serif;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;transition:var(--tx);margin-top:6px;}
+.mpesa-btn{background:linear-gradient(135deg,var(--b600),#1d4ed8);color:var(--white);box-shadow:0 6px 20px rgba(37,99,235,0.3);}
+.mpesa-btn:hover{transform:translateY(-1px);box-shadow:0 10px 28px rgba(37,99,235,0.38);}
+.cash-btn{background:linear-gradient(135deg,var(--g600),var(--g700));color:var(--white);box-shadow:0 6px 20px rgba(5,150,105,0.3);}
+.cash-btn:hover{transform:translateY(-1px);box-shadow:0 10px 28px rgba(5,150,105,0.38);}
+
+/* Status box */
+.status-box{margin-top:18px;padding:14px 18px;border-radius:var(--r-md);font-size:13.5px;font-weight:500;display:none;align-items:center;gap:10px;animation:fadeInUp 0.25s ease;}
+.status-box.success{display:flex;background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;}
+.status-box.error{display:flex;background:#fef2f2;color:#991b1b;border:1px solid #fecaca;}
+.status-box.loading{display:flex;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;}
+
+/* Section label */
+.section-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--s400);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.section-label::after{content:'';flex:1;height:1px;background:var(--s200);}
+
+/* Transactions */
+.transactions{background:var(--white);border-radius:var(--r-xl);box-shadow:var(--shadow);border:1px solid rgba(226,232,240,0.5);overflow:hidden;animation:fadeInUp 0.4s ease 0.24s both;}
+.tx-header{display:flex;align-items:center;justify-content:space-between;padding:22px 24px 16px;border-bottom:1px solid var(--s100);}
+.tx-header h3{font-size:15px;font-weight:700;color:var(--s900);}
+.tx-header p{font-size:12px;color:var(--s400);margin-top:2px;}
+.tx-live{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;color:var(--g600);background:var(--g50);padding:5px 12px;border-radius:20px;}
+.tx-live-dot{width:6px;height:6px;background:var(--g500);border-radius:50%;animation:pulse 2s infinite;}
+.tx-body{padding:14px 18px 18px;display:flex;flex-direction:column;gap:10px;max-height:400px;overflow-y:auto;}
+.tx-body::-webkit-scrollbar{width:4px;}.tx-body::-webkit-scrollbar-thumb{background:var(--s200);border-radius:4px;}
+.transaction-item{padding:13px 16px;border:1px solid var(--s100);border-radius:var(--r-md);display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--s50);transition:var(--tx);}
+.transaction-item:hover{background:var(--white);border-color:var(--s200);box-shadow:0 2px 10px rgba(0,0,0,0.05);}
+.tx-left{display:flex;align-items:center;gap:12px;min-width:0;}
+.tx-icon{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.tx-icon.mpesa{background:#fffbeb;color:#92400e;}.tx-icon.cash{background:var(--g50);color:var(--g700);}.tx-icon.offline{background:#fef3c7;color:#d97706;}
+.tx-details strong{display:block;font-size:13px;font-weight:600;color:var(--s800);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tx-details span{font-size:11.5px;color:var(--s400);}
+.tx-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;}
+.badge{background:var(--g50);color:var(--g700);padding:5px 13px;border-radius:20px;font-size:13px;font-weight:700;}
+.method-tag{font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:0.4px;}
+.method-tag.mpesa{background:#fffbeb;color:#92400e;}.method-tag.cash{background:var(--g50);color:#065f46;}.method-tag.offline{background:#fef3c7;color:#92400e;}
+.empty-state{text-align:center;padding:48px 20px;color:var(--s400);}
+.empty-state .empty-icon{font-size:38px;margin-bottom:10px;}
+.empty-state p{font-size:13.5px;font-weight:500;}
+.hidden{display:none;}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(15,23,42,0.55);backdrop-filter:blur(4px);z-index:500;display:none;align-items:center;justify-content:center;padding:20px;}
+.modal-overlay.open{display:flex;animation:fadeIn 0.2s ease;}
+.modal{background:var(--white);border-radius:var(--r-xl);box-shadow:0 24px 60px rgba(0,0,0,0.18);width:100%;max-width:420px;animation:scaleIn 0.22s cubic-bezier(0.34,1.56,0.64,1);overflow:hidden;}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:22px 24px 18px;border-bottom:1px solid var(--s100);}
+.modal-header h3{font-size:15px;font-weight:700;color:var(--s900);}
+.modal-close{width:30px;height:30px;border-radius:8px;background:var(--s100);border:none;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:var(--tx);}
+.modal-close:hover{background:var(--s200);}
+.modal-body{padding:20px 24px 24px;}
+.modal-body .form-group{margin-bottom:16px;}
+.modal-body label{font-size:12.5px;}
+.modal-body input,.modal-body select{font-size:13.5px;padding:12px 14px;}
+.modal-actions{display:flex;gap:10px;margin-top:6px;}
+.btn-primary{flex:1;padding:13px;border:none;border-radius:var(--r-md);background:linear-gradient(135deg,var(--g600),var(--g700));color:var(--white);font-family:'Poppins',sans-serif;font-size:13.5px;font-weight:700;cursor:pointer;transition:var(--tx);box-shadow:0 5px 16px rgba(5,150,105,0.28);}
+.btn-primary:hover{transform:translateY(-1px);}
+.btn-secondary{padding:13px 20px;border:1.5px solid var(--s200);border-radius:var(--r-md);background:var(--white);color:var(--s600);font-family:'Poppins',sans-serif;font-size:13.5px;font-weight:600;cursor:pointer;transition:var(--tx);}
+.btn-secondary:hover{background:var(--s50);}
+.modal-status{margin-top:12px;padding:12px 16px;border-radius:var(--r-md);font-size:13px;font-weight:500;display:none;align-items:center;gap:9px;}
+.modal-status.success{display:flex;background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;}
+.modal-status.error{display:flex;background:#fef2f2;color:#991b1b;border:1px solid #fecaca;}
+.modal-status.loading{display:flex;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;}
+
+/* Camera modal */
+#cameraModal .modal{max-width:480px;}
+#cameraPreview{width:100%;border-radius:var(--r-md);background:#000;aspect-ratio:4/3;object-fit:cover;}
+#captureBtn{width:100%;margin-top:12px;padding:13px;border:none;border-radius:var(--r-md);background:var(--g600);color:white;font-family:'Poppins',sans-serif;font-size:14px;font-weight:700;cursor:pointer;}
+#ocrResult{margin-top:12px;padding:12px;background:var(--s50);border-radius:var(--r-md);font-size:13.5px;font-weight:600;color:var(--s800);text-align:center;min-height:40px;}
+#useOcrBtn{width:100%;margin-top:8px;padding:12px;border:none;border-radius:var(--r-md);background:var(--b600);color:white;font-family:'Poppins',sans-serif;font-size:14px;font-weight:700;cursor:pointer;display:none;}
+
+/* Spinner */
+.spinner{width:15px;height:15px;border:2px solid rgba(29,78,216,0.3);border-top-color:#1d4ed8;border-radius:50%;animation:spin 0.7s linear infinite;flex-shrink:0;}
+
+@keyframes fadeInUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+@keyframes scaleIn{from{opacity:0;transform:scale(0.93);}to{opacity:1;transform:scale(1);}}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 2px rgba(16,185,129,0.2);}50%{box-shadow:0 0 0 5px rgba(16,185,129,0.06);}}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+@media(max-width:600px){
+  .header-inner{padding:22px 16px 72px;}
+  .stats{gap:12px;}.stat-card{padding:18px 16px;gap:12px;}.stat-card h2{font-size:22px;}
+  .container{padding:0 14px 40px;}.card{padding:20px 16px;}
+}
 </style>
 </head>
 <body>
-<div class="header"><div>🏛️</div><h1>Bungoma County Government</h1><p>Revenue Collection System v1.7.0 | Cloud Sync Enabled</p><div class="status">● SYSTEM ONLINE</div></div>
+
+<!-- Auth loading -->
+<div id="authLoading">
+  <div class="load-logo">💳</div>
+  <div class="load-spinner"></div>
+  <p>Verifying your session…</p>
+</div>
+
+<!-- Broadcast banner -->
+<div id="broadcastBanner">
+  <span class="bc-icon">📢</span>
+  <div class="bc-text">
+    <strong id="bcSender">Admin</strong>
+    <span id="bcMessage">Loading…</span>
+  </div>
+  <span class="bc-badge" id="bcBadge" style="display:none;">1</span>
+  <button class="bc-close" id="bcClose">✕</button>
+</div>
+
+<!-- Offline banner -->
+<div id="offlineBanner">
+  ⚡ You're offline. Payments are saved locally.
+  <button id="syncBtn">Sync Now</button>
+</div>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-inner">
+    <div class="header-brand">
+      <div class="brand-icon">💳</div>
+      <div>
+        <h1>Bungoma County Revenue</h1>
+        <p>Officer Collection Portal</p>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="user-pill">
+        <div class="pill-avatar" id="pillAvatar">O</div>
+        <div class="pill-info">
+          <strong id="loggedUser">Officer</strong>
+          <span id="userRole">officer</span>
+        </div>
+      </div>
+      <button class="hdr-btn hdr-settings-btn" id="settingsBtn">⚙️ Settings</button>
+      <button class="hdr-btn" id="logoutBtn">🚪 Sign Out</button>
+    </div>
+  </div>
+</div>
+
+<!-- Container -->
 <div class="container">
-<div class="stats"><div class="stat"><div class="stat-value" id="totalCollected">KES 0</div><div class="stat-label">Total Collected Today</div></div><div class="stat"><div class="stat-value" id="totalTransactions">0</div><div class="stat-label">Transactions</div></div></div>
-<div class="card">
-<div class="tabs"><button class="tab active" onclick="showTab('mpesa', this)">M-PESA</button><button class="tab" onclick="showTab('cash', this)">CASH</button></div>
-<div id="mpesaForm">
-<div class="form-group"><label>Phone Number</label><input type="tel" id="mphone" placeholder="0741501282" value="0741501282"></div>
-<div class="form-group"><label>Amount (KES)</label><input type="number" id="mamount" placeholder="Amount" readonly></div>
-<div class="form-group"><label>Revenue Stream</label><div class="radio-group">
-<div class="radio-item"><input type="radio" id="m_market" name="mservice" value="Market fee" checked><label for="m_market">Market fee</label></div>
-<div class="radio-item"><input type="radio" id="m_parking" name="mservice" value="Parking"><label for="m_parking">Parking</label></div>
-<div class="radio-item"><input type="radio" id="m_cess" name="mservice" value="Cess"><label for="m_cess">Cess</label></div>
-<div class="radio-item"><input type="radio" id="m_boda" name="mservice" value="BodaBoda"><label for="m_boda">BodaBoda</label></div>
-<div class="radio-item"><input type="radio" id="m_license" name="mservice" value="Business license"><label for="m_license">Business license</label></div>
-<div class="radio-item"><input type="radio" id="m_land" name="mservice" value="land Rate"><label for="m_land">land Rate</label></div>
-</div></div>
-<div class="form-group"><label>Plate No / Client ID</label><input type="text" id="mclientid" placeholder="Plate No / Client ID"></div>
-<div class="form-group"><label>Ward</label><select id="mward" required><option value="Bungoma Town">Bungoma Town</option><option value="Kanduyi" selected>Kanduyi</option><option value="Webuye West">Webuye West</option><option value="Webuye East">Webuye East</option><option value="Bumula">Bumula</option><option value="Tongaren">Tongaren</option><option value="Sirisia">Sirisia</option><option value="Kimilili">Kimilili</option><option value="MT Elgon">MT Elgon</option></select></div>
-<button class="btn btn-mpesa" onclick="lipasasa()">💳 LIPA SASA (M-PESA)</button>
+
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-icon-wrap">💰</div>
+      <div>
+        <h2 id="totalAmount">KES 0</h2>
+        <p>Total Revenue</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon-wrap">🔄</div>
+      <div>
+        <h2 id="totalTransactions">0</h2>
+        <p>Total Transactions</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="switch">
+      <button id="mpesaTab" class="active">📱 &nbsp;M-PESA</button>
+      <button id="cashTab">💵 &nbsp;Cash</button>
+    </div>
+
+    <!-- M-PESA SECTION -->
+    <div id="mpesaSection">
+      <div class="section-label">Payment Details</div>
+      <div class="form-group">
+        <label>Amount (KES)</label>
+        <input type="number" id="amount" value="50" placeholder="Enter amount" required>
+      </div>
+      <div class="form-group">
+        <label>Revenue Stream</label>
+        <div class="revenue-grid">
+          <div class="revenue-btn active" data-type="Parking"><span class="rev-icon">🚗</span>Parking</div>
+          <div class="revenue-btn" data-type="Market Fee"><span class="rev-icon">🛒</span>Market Fee</div>
+          <div class="revenue-btn" data-type="Cess"><span class="rev-icon">📦</span>Cess</div>
+          <div class="revenue-btn" data-type="Business Permit"><span class="rev-icon">🏢</span>Business Permit</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Vehicle Plate / Client ID</label>
+        <div class="plate-wrap">
+          <input type="text" id="plate" placeholder="e.g. KCA 123A or tap 📷 to scan" required>
+          <button class="cam-btn" id="camBtn" title="Scan plate with camera">📷</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Phone Number</label>
+        <input type="text" id="phone" placeholder="e.g. 0712 345 678" required>
+      </div>
+      <div class="form-group">
+        <label>Ward</label>
+        <select id="ward">
+          <option>Kanduyi</option><option>Kimilili</option><option>Webuye East</option>
+          <option>Webuye West</option><option>Tongaren</option><option>Sirisia</option>
+        </select>
+      </div>
+      <button class="submit-btn mpesa-btn" id="payBtn">📱 &nbsp;LIPA NA M-PESA</button>
+    </div>
+
+    <!-- CASH SECTION -->
+    <div id="cashSection" class="hidden">
+      <div class="section-label">Cash Collection</div>
+      <div class="form-group">
+        <label>Cash Amount (KES)</label>
+        <input type="number" id="cashAmount" placeholder="Enter amount collected">
+      </div>
+      <div class="form-group">
+        <label>Client ID / Reference</label>
+        <div class="plate-wrap">
+          <input type="text" id="cashClient" placeholder="e.g. Client name or ID">
+          <button class="cam-btn" id="cashCamBtn" title="Scan with camera">📷</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Revenue Stream</label>
+        <div class="revenue-grid">
+          <div class="revenue-btn active" data-cash-type="Parking"><span class="rev-icon">🚗</span>Parking</div>
+          <div class="revenue-btn" data-cash-type="Market Fee"><span class="rev-icon">🛒</span>Market Fee</div>
+          <div class="revenue-btn" data-cash-type="Cess"><span class="rev-icon">📦</span>Cess</div>
+          <div class="revenue-btn" data-cash-type="Business Permit"><span class="rev-icon">🏢</span>Business Permit</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Ward</label>
+        <select id="cashWard">
+          <option>Kanduyi</option><option>Kimilili</option><option>Webuye East</option>
+          <option>Webuye West</option><option>Tongaren</option><option>Sirisia</option>
+        </select>
+      </div>
+      <button class="submit-btn cash-btn" id="cashBtn">💵 &nbsp;RECORD CASH PAYMENT</button>
+    </div>
+
+    <div id="statusBox" class="status-box"></div>
+  </div>
+
+  <div class="transactions">
+    <div class="tx-header">
+      <div>
+        <h3>My Transactions</h3>
+        <p>Your collected payments only</p>
+      </div>
+      <span class="tx-live"><span class="tx-live-dot"></span>Live</span>
+    </div>
+    <div class="tx-body" id="transactionsList"></div>
+  </div>
+
 </div>
-<div id="cashForm" class="hidden">
-<div class="form-group"><label>Amount (KES)</label><input type="number" id="camount" placeholder="Amount" readonly></div>
-<div class="form-group"><label>Revenue Stream</label><div class="radio-group">
-<div class="radio-item"><input type="radio" id="c_market" name="cservice" value="Market fee" checked><label for="c_market">Market fee</label></div>
-<div class="radio-item"><input type="radio" id="c_parking" name="cservice" value="Parking"><label for="c_parking">Parking</label></div>
-<div class="radio-item"><input type="radio" id="c_cess" name="cservice" value="Cess"><label for="c_cess">Cess</label></div>
-<div class="radio-item"><input type="radio" id="c_boda" name="cservice" value="BodaBoda"><label for="c_boda">BodaBoda</label></div>
-<div class="radio-item"><input type="radio" id="c_license" name="cservice" value="Business license"><label for="c_license">Business license</label></div>
-<div class="radio-item"><input type="radio" id="c_land" name="cservice" value="land Rate"><label for="c_land">land Rate</label></div>
-</div></div>
-<div class="form-group"><label>Client ID</label><input type="text" id="cclientid" placeholder="Client ID"></div>
-<div class="form-group"><label>Ward</label><select id="cward" required><option value="Bungoma Town">Bungoma Town</option><option value="Kanduyi" selected>Kanduyi</option><option value="Webuye West">Webuye West</option><option value="Webuye East">Webuye East</option><option value="Bumula">Bumula</option><option value="Tongaren">Tongaren</option><option value="Sirisia">Sirisia</option><option value="Kimilili">Kimilili</option><option value="MT Elgon">MT Elgon</option></select></div>
-<button class="btn btn-cash" onclick="recordCash()">💵 RECORD CASH</button>
+
+<!-- Settings Modal -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>⚙️ Profile Settings</h3>
+      <button class="modal-close" id="closeSettings">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Display Name</label>
+        <input type="text" id="settingsName" placeholder="Your display name">
+      </div>
+      <div class="form-group">
+        <label>Ward Assignment</label>
+        <select id="settingsWard">
+          <option>Kanduyi</option><option>Kimilili</option><option>Webuye East</option>
+          <option>Webuye West</option><option>Tongaren</option><option>Sirisia</option>
+        </select>
+      </div>
+      <div style="border-top:1px solid var(--s100);padding-top:16px;margin-top:4px;">
+        <p style="font-size:12px;color:var(--s500);margin-bottom:14px;font-weight:500;">To change password, use the Forgot Password link on the login page.</p>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-primary" id="saveSettingsBtn">💾 Save Changes</button>
+        <button class="btn-secondary" id="closeSettings2">Cancel</button>
+      </div>
+      <div class="modal-status" id="settingsStatus"></div>
+    </div>
+  </div>
 </div>
+
+<!-- Camera / OCR Modal -->
+<div class="modal-overlay" id="cameraModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>📷 Scan Plate / ID</h3>
+      <button class="modal-close" id="closeCam">✕</button>
+    </div>
+    <div class="modal-body" style="padding-top:16px;">
+      <video id="cameraPreview" autoplay playsinline></video>
+      <button id="captureBtn">📸 Capture &amp; Read Text</button>
+      <div id="ocrResult">Point camera at plate/ID, then tap Capture</div>
+      <button id="useOcrBtn">✅ Use This Text</button>
+      <canvas id="ocrCanvas" style="display:none;"></canvas>
+    </div>
+  </div>
 </div>
-<div class="footer">Bungoma Pay v1.7.0 | Secure | Cloud-Enabled | © Elphaz</div>
-<script>
-window.showTab=function(tab,el){document.getElementById('mpesaForm').classList.toggle('hidden',tab!=='mpesa');document.getElementById('cashForm').classList.toggle('hidden',tab!=='cash');document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));el.classList.add('active')};const streamPricing={'Market fee':50,'Parking':100,'Cess':100,'BodaBoda':50,'Business license':500,'land Rate':200};document.addEventListener('DOMContentLoaded',function(){const mamount=document.getElementById('mamount');document.querySelectorAll('input[name="mservice"]').forEach(r=>r.addEventListener('change',function(){if(this.checked&&streamPricing[this.value])mamount.value=streamPricing[this.value]}));const mChecked=document.querySelector('input[name="mservice"]:checked');if(mChecked)mamount.value=streamPricing[mChecked.value];const camount=document.getElementById('camount');document.querySelectorAll('input[name="cservice"]').forEach(r=>r.addEventListener('change',function(){if(this.checked&&streamPricing[this.value])camount.value=streamPricing[this.value]}));const cChecked=document.querySelector('input[name="cservice"]:checked');if(cChecked)camount.value=streamPricing[cChecked.value]});window.lipasasa=async function(){alert('Firebase disabled for testing')};window.recordCash=async function(){const amount=document.getElementById('camount').value;const stream=document.querySelector('input[name="cservice"]:checked').value;alert('Cash recorded: KES '+amount+' for '+stream)};
+
+<!-- Firebase + App Script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js"></script>
+<script type="module">
+import { initializeApp }    from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut }
+                             from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, collection, query, where, orderBy, onSnapshot,
+         doc, getDoc }       from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+/* ── YOUR FIREBASE CONFIG ── Replace with your own ── */
+const firebaseConfig = {
+  apiKey:            "AIzaSyCWqMIaIVpXwi7Am2tFvy4Tq2PGtpYgp_M",
+  authDomain:        "bungoma-pay.firebaseapp.com",
+  projectId:         "bungoma-pay",
+  storageBucket:     "bungoma-pay.firebasestorage.app",
+  messagingSenderId: "1022710513801",
+  appId:             "1:1022710513801:web:4cf8ee7c786e6c333cc658"
+};
+
+const fbApp = initializeApp(firebaseConfig);
+const auth  = getAuth(fbApp);
+const db    = getFirestore(fbApp);
+
+// ── State ─────────────────────────────────────────────────
+let currentUser    = null;
+let idToken        = null;
+let selectedType   = 'Parking';
+let selectedCashType = 'Parking';
+let offlineQueue   = JSON.parse(localStorage.getItem('offlineQueue') || '[]');
+let cameraStream   = null;
+let ocrTarget      = 'plate'; // 'plate' or 'cashClient'
+
+// ── Helpers ───────────────────────────────────────────────
+function fmt(n) { return 'KES ' + Number(n).toLocaleString(); }
+function timeAgo(ts) {
+  if (!ts) return '';
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  const s = Math.floor((Date.now() - d) / 1000);
+  if (s < 60) return 'just now';
+  if (s < 3600) return Math.floor(s/60) + 'm ago';
+  if (s < 86400) return Math.floor(s/3600) + 'h ago';
+  return d.toLocaleDateString();
+}
+
+async function getToken() {
+  idToken = await currentUser.getIdToken();
+  return idToken;
+}
+
+function showStatus(msg, type) {
+  const box = document.getElementById('statusBox');
+  box.className = `status-box ${type}`;
+  box.style.display = 'flex';
+  box.innerHTML = type === 'loading' ? `<div class="spinner"></div>${msg}` : msg;
+}
+
+// ── Offline detection ─────────────────────────────────────
+function updateOnlineStatus() {
+  const banner = document.getElementById('offlineBanner');
+  if (!navigator.onLine) {
+    banner.classList.add('show');
+  } else {
+    banner.classList.remove('show');
+    syncOfflineQueue();
+  }
+}
+window.addEventListener('online',  updateOnlineStatus);
+window.addEventListener('offline', updateOnlineStatus);
+
+async function syncOfflineQueue() {
+  if (!offlineQueue.length || !currentUser) return;
+  try {
+    const token = await getToken();
+    const res = await fetch('/api/sync-offline', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ transactions: offlineQueue })
+    });
+    const data = await res.json();
+    if (data.success) {
+      offlineQueue = [];
+      localStorage.setItem('offlineQueue', '[]');
+      if (data.synced > 0) {
+        showStatus(`✅ Synced ${data.synced} offline transaction(s)!`, 'success');
+      }
+    }
+  } catch (e) { console.log('Sync failed:', e); }
+}
+
+document.getElementById('syncBtn').addEventListener('click', syncOfflineQueue);
+
+// ── Heartbeat (presence) ──────────────────────────────────
+function startHeartbeat() {
+  setInterval(async () => {
+    if (!currentUser || !navigator.onLine) return;
+    const token = await getToken();
+    fetch('/api/heartbeat', { method: 'POST', headers: { Authorization: `Bearer ${token}` } }).catch(()=>{});
+  }, 30000);
+}
+
+window.addEventListener('beforeunload', async () => {
+  if (!currentUser) return;
+  const token = await getToken().catch(()=>null);
+  if (token) navigator.sendBeacon('/api/offline', JSON.stringify({ token }));
+});
+
+// ── Auth guard ────────────────────────────────────────────
+onAuthStateChanged(auth, async (user) => {
+  if (!user) { window.location.href = '/login.html'; return; }
+  currentUser = user;
+
+  let role = 'officer', username = user.email?.split('@')[0] || 'Officer', ward = 'Kanduyi';
+  try {
+    const snap = await getDoc(doc(db, 'users', user.uid));
+    if (snap.exists()) {
+      const d = snap.data();
+      role     = d.role     || 'officer';
+      username = d.username || d.name || username;
+      ward     = d.ward     || 'Kanduyi';
+    }
+  } catch {}
+
+  if (role === 'admin') { window.location.href = '/admin.html'; return; }
+
+  // Populate UI
+  document.getElementById('loggedUser').textContent  = username;
+  document.getElementById('userRole').textContent    = role;
+  document.getElementById('pillAvatar').textContent  = username.charAt(0).toUpperCase();
+  document.getElementById('settingsName').value      = username;
+  document.getElementById('authLoading').style.display = 'none';
+
+  // Pre-select ward
+  const wardSel = document.getElementById('ward');
+  for (let o of wardSel.options) if (o.value === ward) o.selected = true;
+  const cWardSel = document.getElementById('cashWard');
+  for (let o of cWardSel.options) if (o.value === ward) o.selected = true;
+  const sWardSel = document.getElementById('settingsWard');
+  for (let o of sWardSel.options) if (o.value === ward) o.selected = true;
+
+  updateOnlineStatus();
+  startHeartbeat();
+  listenTransactions(user.uid);
+  listenBroadcasts(user.uid);
+});
+
+// ── Realtime Transactions ─────────────────────────────────
+function listenTransactions(uid) {
+  const q = query(
+    collection(db, 'transactions'),
+    where('createdBy', '==', uid),
+    orderBy('createdAt', 'desc')
+  );
+  onSnapshot(q, snap => {
+    const txs = [];
+    snap.forEach(d => txs.push({ id: d.id, ...d.data() }));
+    renderTransactions(txs);
+    // Update stats
+    let total = 0;
+    txs.forEach(t => total += Number(t.amount) || 0);
+    document.getElementById('totalAmount').textContent       = fmt(total);
+    document.getElementById('totalTransactions').textContent = txs.length;
+  });
+}
+
+function renderTransactions(txs) {
+  const list = document.getElementById('transactionsList');
+  if (!txs.length) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><p>No transactions yet. Start collecting!</p></div>`;
+    return;
+  }
+  // Also show offline queue items at top
+  const offlineItems = offlineQueue.map(t => ({
+    ...t, _offline: true, paymentMethod: 'CASH'
+  }));
+  const all = [...offlineItems, ...txs];
+
+  list.innerHTML = all.slice(0, 30).map(tx => {
+    const method = (tx.paymentMethod || '').toLowerCase();
+    const icon   = tx._offline ? '⏳' : method === 'm-pesa' ? '📱' : '💵';
+    const cls    = tx._offline ? 'offline' : method === 'm-pesa' ? 'mpesa' : 'cash';
+    return `
+      <div class="transaction-item">
+        <div class="tx-left">
+          <div class="tx-icon ${cls}">${icon}</div>
+          <div class="tx-details">
+            <strong>${tx.plate || tx.cashClient || 'N/A'}</strong>
+            <span>${tx.revenueType || '—'} · ${tx._offline ? 'Pending sync' : timeAgo(tx.createdAt)}</span>
+          </div>
+        </div>
+        <div class="tx-right">
+          <div class="badge">${fmt(tx.amount)}</div>
+          <span class="method-tag ${cls}">${tx._offline ? 'OFFLINE' : tx.paymentMethod}</span>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ── Realtime Broadcasts ───────────────────────────────────
+function listenBroadcasts(uid) {
+  const q = query(collection(db, 'broadcasts'), orderBy('createdAt', 'desc'));
+  onSnapshot(q, snap => {
+    let unread = [];
+    snap.forEach(d => {
+      const bc = { id: d.id, ...d.data() };
+      if (!(bc.readBy || []).includes(uid)) unread.push(bc);
+    });
+    if (unread.length) {
+      const bc = unread[0];
+      document.getElementById('bcSender').textContent  = bc.senderName || 'Admin';
+      document.getElementById('bcMessage').textContent = bc.message;
+      const badge = document.getElementById('bcBadge');
+      badge.textContent    = unread.length;
+      badge.style.display  = unread.length > 1 ? 'flex' : 'none';
+      document.getElementById('broadcastBanner').classList.add('show');
+
+      document.getElementById('bcClose').onclick = async () => {
+        document.getElementById('broadcastBanner').classList.remove('show');
+        const token = await getToken();
+        for (const b of unread) {
+          fetch(`/api/broadcast/${b.id}/read`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } }).catch(()=>{});
+        }
+      };
+    } else {
+      document.getElementById('broadcastBanner').classList.remove('show');
+    }
+  });
+}
+
+// ── Revenue type selection ─────────────────────────────────
+document.querySelectorAll('[data-type]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-type]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedType = btn.dataset.type;
+  });
+});
+document.querySelectorAll('[data-cash-type]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-cash-type]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedCashType = btn.dataset.cashType;
+  });
+});
+
+// ── Tab switch ────────────────────────────────────────────
+document.getElementById('mpesaTab').addEventListener('click', () => {
+  document.getElementById('mpesaTab').classList.add('active');
+  document.getElementById('cashTab').classList.remove('active');
+  document.getElementById('mpesaSection').classList.remove('hidden');
+  document.getElementById('cashSection').classList.add('hidden');
+});
+document.getElementById('cashTab').addEventListener('click', () => {
+  document.getElementById('cashTab').classList.add('active');
+  document.getElementById('mpesaTab').classList.remove('active');
+  document.getElementById('cashSection').classList.remove('hidden');
+  document.getElementById('mpesaSection').classList.add('hidden');
+});
+
+// ── M-PESA Pay ────────────────────────────────────────────
+document.getElementById('payBtn').addEventListener('click', async () => {
+  const amount = document.getElementById('amount').value;
+  const plate  = document.getElementById('plate').value.trim();
+  const phone  = document.getElementById('phone').value.trim();
+  const ward   = document.getElementById('ward').value;
+
+  if (!amount || !plate || !phone) { showStatus('Please fill all required fields.', 'error'); return; }
+
+  const btn = document.getElementById('payBtn');
+  btn.disabled    = true;
+  showStatus('Sending STK Push…', 'loading');
+
+  try {
+    const token = await getToken();
+    const res   = await fetch('/api/pay', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ phone, amount, plate, ward, revenueType: selectedType })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      showStatus('✅ STK Push sent! Ask customer to enter M-PESA PIN.', 'success');
+      document.getElementById('plate').value = '';
+      document.getElementById('phone').value = '';
+    } else {
+      showStatus('❌ ' + (data.message || data.error), 'error');
+    }
+  } catch {
+    showStatus('❌ Network error. Please try again.', 'error');
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+// ── Cash Payment ──────────────────────────────────────────
+document.getElementById('cashBtn').addEventListener('click', async () => {
+  const amount = document.getElementById('cashAmount').value;
+  const plate  = document.getElementById('cashClient').value.trim();
+  const ward   = document.getElementById('cashWard').value;
+
+  if (!amount) { showStatus('Please enter cash amount.', 'error'); return; }
+
+  // Offline handling
+  if (!navigator.onLine) {
+    const receipt = 'OFFLINE-' + Date.now() + '-' + Math.random().toString(36).slice(2,6).toUpperCase();
+    const tx = { amount, plate, ward, revenueType: selectedCashType, receipt, createdAt: new Date().toISOString() };
+    offlineQueue.push(tx);
+    localStorage.setItem('offlineQueue', JSON.stringify(offlineQueue));
+    showStatus('💾 Saved offline. Will sync when connection is restored.', 'success');
+    document.getElementById('cashAmount').value = '';
+    document.getElementById('cashClient').value = '';
+    renderTransactions([]); // refresh to show offline items
+    return;
+  }
+
+  const btn = document.getElementById('cashBtn');
+  btn.disabled = true;
+  showStatus('Recording cash payment…', 'loading');
+
+  try {
+    const token = await getToken();
+    const res   = await fetch('/api/cash', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ amount, plate, ward, revenueType: selectedCashType })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      showStatus(`✅ Cash recorded! Receipt: ${data.receipt}`, 'success');
+      document.getElementById('cashAmount').value = '';
+      document.getElementById('cashClient').value = '';
+    } else {
+      showStatus('❌ ' + (data.error || 'Error recording payment'), 'error');
+    }
+  } catch {
+    showStatus('❌ Network error.', 'error');
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+// ── Logout ────────────────────────────────────────────────
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  if (!currentUser) return;
+  const token = await getToken().catch(()=>null);
+  if (token) fetch('/api/offline', { method:'POST', headers:{ Authorization:`Bearer ${token}` } }).catch(()=>{});
+  await signOut(auth);
+  window.location.href = '/login.html';
+});
+
+// ── Settings ──────────────────────────────────────────────
+document.getElementById('settingsBtn').addEventListener('click', () => {
+  document.getElementById('settingsModal').classList.add('open');
+});
+['closeSettings','closeSettings2'].forEach(id => {
+  document.getElementById(id)?.addEventListener('click', () => {
+    document.getElementById('settingsModal').classList.remove('open');
+  });
+});
+
+document.getElementById('saveSettingsBtn').addEventListener('click', async () => {
+  const username = document.getElementById('settingsName').value.trim();
+  const ward     = document.getElementById('settingsWard').value;
+  const st       = document.getElementById('settingsStatus');
+  st.className   = 'modal-status loading';
+  st.style.display = 'flex';
+  st.innerHTML   = '<div class="spinner"></div>Saving…';
+
+  try {
+    const token = await getToken();
+    const res   = await fetch('/api/profile/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ username, ward })
+    });
+    const data = await res.json();
+    if (data.success) {
+      st.className   = 'modal-status success';
+      st.textContent = '✅ Profile updated!';
+      document.getElementById('loggedUser').textContent = username;
+      document.getElementById('pillAvatar').textContent = username.charAt(0).toUpperCase();
+    } else {
+      st.className   = 'modal-status error';
+      st.textContent = '❌ ' + (data.error || 'Update failed');
+    }
+  } catch {
+    st.className   = 'modal-status error';
+    st.textContent = '❌ Network error';
+  }
+});
+
+// ── Camera OCR ────────────────────────────────────────────
+let lastOcrText = '';
+
+async function openCamera(target) {
+  ocrTarget = target;
+  document.getElementById('ocrResult').textContent = 'Point camera at plate/ID, then tap Capture';
+  document.getElementById('useOcrBtn').style.display = 'none';
+  document.getElementById('cameraModal').classList.add('open');
+
+  try {
+    cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    document.getElementById('cameraPreview').srcObject = cameraStream;
+  } catch {
+    document.getElementById('ocrResult').textContent = '⚠️ Camera access denied. Please allow camera.';
+  }
+}
+
+function closeCamera() {
+  if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
+  document.getElementById('cameraModal').classList.remove('open');
+}
+
+document.getElementById('camBtn').addEventListener('click', () => openCamera('plate'));
+document.getElementById('cashCamBtn').addEventListener('click', () => openCamera('cashClient'));
+document.getElementById('closeCam').addEventListener('click', closeCamera);
+
+document.getElementById('captureBtn').addEventListener('click', async () => {
+  const video  = document.getElementById('cameraPreview');
+  const canvas = document.getElementById('ocrCanvas');
+  canvas.width  = video.videoWidth;
+  canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+
+  document.getElementById('ocrResult').textContent = '🔍 Reading text…';
+  document.getElementById('captureBtn').disabled   = true;
+
+  try {
+    const result = await Tesseract.recognize(canvas, 'eng', {
+      tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 '
+    });
+    const text = result.data.text.trim().replace(/\s+/g,' ');
+    lastOcrText = text;
+    document.getElementById('ocrResult').textContent = text || '⚠️ Could not read text. Try again.';
+    if (text) document.getElementById('useOcrBtn').style.display = 'block';
+  } catch {
+    document.getElementById('ocrResult').textContent = '❌ OCR failed. Try again.';
+  } finally {
+    document.getElementById('captureBtn').disabled = false;
+  }
+});
+
+document.getElementById('useOcrBtn').addEventListener('click', () => {
+  if (lastOcrText) {
+    document.getElementById(ocrTarget).value = lastOcrText;
+  }
+  closeCamera();
+});
 </script>
 </body>
 </html>
