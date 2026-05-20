@@ -193,9 +193,9 @@ app.post('/api/pay', verifyToken, async (req, res) => {
       createdAt:       new Date()
     };
 
-    markRequest(dedupKey);
+markRequest(dedupKey);
+    console.log(`\n=== STK SENT === Plate:${plate} | KES${amount} | Phone:${fp}\n`);
     res.json({ success: true, message: 'STK Push Sent', checkoutId });
-
   } catch (error) {
     console.log('STK ERROR=', error.response?.data || error.message);
     res.status(500).json({ success: false, error: error.message });
@@ -208,6 +208,7 @@ app.post('/api/callback', async (req, res) => {
     const callback   = req.body.Body.stkCallback;
     const resultCode = callback.ResultCode;
     const checkoutId = callback.CheckoutRequestID;
+console.log(`\n=== CALLBACK RECEIVED === ID:${checkoutId} | Code:${resultCode}\n`);
 
     if (resultCode === 0) {
       const items = callback.CallbackMetadata?.Item || [];
@@ -232,7 +233,8 @@ app.post('/api/callback', async (req, res) => {
       });
 
       await sendReceiptSMS(phone, amount, receipt, tx?.plate || 'Revenue Payment');
-      delete pendingTransactions[checkoutId];
+console.log(`\n=== PAYMENT SUCCESS === Receipt:${receipt} | KES${amount}\n`);      
+delete pendingTransactions[checkoutId];
     }
 
     res.json({ success: true });
