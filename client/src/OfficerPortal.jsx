@@ -76,7 +76,7 @@ export default function OfficerPortal({ profile }) {
 
   useEffect(() => {
     if (online && queue.length && user) syncOffline()
-  }, [online, user?.uid])
+  }, [online, user?.uid, queue.length])
 
   async function request(path, payload) {
     const idToken = await token()
