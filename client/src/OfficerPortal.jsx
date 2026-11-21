@@ -154,14 +154,11 @@ export default function OfficerPortal({ profile }) {
     if (!user || !navigator.onLine || !queue.length || busy) return
     setBusy(true)
     try {
-      while (navigator.onLine) {
-        const batch = queue.slice(0, 50)
-        if (!batch.length) break
-        const result = await request('/api/sync-offline', { transactions: batch })
-        const completed = Number(result.synced) + Number(result.skipped)
-        if (!Number.isInteger(completed) || completed !== batch.length) throw new Error('Server did not confirm every queued transaction.')
-        setQueue(current => current.slice(batch.length))
-      }
+      const batch = queue.slice(0, 50)
+      const result = await request('/api/sync-offline', { transactions: batch })
+      const completed = Number(result.synced) + Number(result.skipped)
+      if (!Number.isInteger(completed) || completed !== batch.length) throw new Error('Server did not confirm every queued transaction.')
+      setQueue(current => current.slice(batch.length))
       setStatus({ type: 'success', message: 'Offline queue synchronization completed.' })
     } catch (error) {
       setStatus({ type: 'error', message: 'Sync paused. Unconfirmed transactions remain saved: ' + error.message })
