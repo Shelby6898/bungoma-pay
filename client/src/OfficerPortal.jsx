@@ -60,7 +60,6 @@ export default function OfficerPortal({ profile }) {
     const onlineHandler = () => setOnline(navigator.onLine)
     window.addEventListener('online', onlineHandler)
     window.addEventListener('offline', onlineHandler)
-    const idToken = null
     return () => {
       stopTransactions()
       stopBroadcasts()
