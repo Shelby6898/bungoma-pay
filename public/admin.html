@@ -188,6 +188,89 @@ body{font-family:'Poppins',sans-serif;background:var(--s100);color:var(--s800);m
 
 @media(max-width:1100px){.stats{grid-template-columns:repeat(2,1fr);}.dashboard-grid{grid-template-columns:1fr;}}
 @media(max-width:800px){:root{--sw:0px;}.sidebar{width:0;overflow:hidden;}.main{margin-left:0;}.main-header-inner{padding:22px 18px 72px;}.content{padding:0 16px 40px;}.stats{grid-template-columns:1fr 1fr;gap:12px;}}
+
+/* Mobile-friendly officer assignment cards */
+@media(max-width:800px) {
+  .officers-table,
+  .officers-table thead,
+  .officers-table tbody {
+    display:block;
+    width:100%;
+  }
+
+  .officers-table thead {
+    display:none;
+  }
+
+  .officers-table tbody tr {
+    display:block;
+    margin:12px;
+    padding:10px;
+    border:1px solid var(--s200);
+    border-radius:14px;
+    background:var(--white);
+    box-shadow:0 2px 8px rgba(0,0,0,0.04);
+  }
+
+  .officers-table tbody td {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    padding:10px 4px;
+    border-top:1px solid var(--s100);
+    font-size:12px;
+    text-align:right;
+  }
+
+  .officers-table tbody td:first-child {
+    display:block;
+    border-top:0;
+    padding-bottom:12px;
+  }
+
+  .officers-table tbody td:nth-child(2)::before {
+    content:"Location";
+    color:var(--s500);
+    font-weight:600;
+  }
+
+  .officers-table tbody td:nth-child(3)::before {
+    content:"Collected";
+    color:var(--s500);
+    font-weight:600;
+  }
+
+  .officers-table tbody td:nth-child(4)::before {
+    content:"Status";
+    color:var(--s500);
+    font-weight:600;
+  }
+
+  .officers-table tbody td:last-child {
+    display:block;
+    padding-top:12px;
+  }
+
+  .officers-table [data-assign-officer] {
+    display:block;
+    width:100%;
+    min-height:44px;
+    border:0;
+    border-radius:10px;
+    background:var(--g700);
+    color:white;
+    font-size:13px;
+    font-weight:700;
+    cursor:pointer;
+  }
+
+  .officers-table tbody td[colspan] {
+    display:block;
+    text-align:center;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -306,10 +389,11 @@ body{font-family:'Poppins',sans-serif;background:var(--s100);color:var(--s800);m
                 <th>Ward</th>
                 <th>Collected</th>
                 <th>Status</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody id="officersTableBody">
-              <tr><td colspan="4" style="text-align:center;padding:24px;color:var(--s400);font-size:13px;">Loading officers…</td></tr>
+              <tr><td colspan="5" style="text-align:center;padding:24px;color:var(--s400);font-size:13px;">Loading officers…</td></tr>
             </tbody>
           </table>
         </div>
@@ -341,21 +425,65 @@ body{font-family:'Poppins',sans-serif;background:var(--s100);color:var(--s800);m
       <div class="form-group"><label>Email Address</label><input type="email" id="offEmail" placeholder="officer@bungoma.go.ke"></div>
       <div class="form-group"><label>Password</label><input type="password" id="offPass" placeholder="Minimum 6 characters"></div>
       <div class="form-group">
-        <label>Assigned Ward</label>
-        <select id="offWard">
-          <option>Kanduyi</option><option>Kimilili</option><option>Webuye East</option>
-          <option>Webuye West</option><option>Tongaren</option><option>Sirisia</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Role</label>
-        <select id="offRole"><option value="officer">Officer</option><option value="admin">Admin</option></select>
-      </div>
+          <label>Assigned Constituency</label>
+          <select id="offConstituency" required>
+            <option value="">Loading constituencies…</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Assigned Ward</label>
+          <select id="offWard" required disabled>
+            <option value="">Select a constituency first</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Account Role</label>
+          <input type="text" value="Officer" readonly>
+          <small style="color:var(--s400);">Officer accounts are created with restricted officer access.</small>
+        </div>
       <div class="modal-actions">
         <button class="btn-primary" id="createOfficerBtn">➕ Create Account</button>
         <button class="btn-secondary" onclick="closeModal('addOfficer')">Cancel</button>
       </div>
       <div class="status-box" id="officerStatus"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ASSIGN OFFICER LOCATION MODAL ══ -->
+<div class="modal-overlay" id="assignOfficerModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Assign Officer Location</h3>
+      <button class="modal-close" onclick="closeModal('assignOfficer')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="assignOfficerUid">
+      <div class="form-group">
+        <label>Officer</label>
+        <input type="text" id="assignOfficerName" readonly>
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="text" id="assignOfficerEmail" readonly>
+      </div>
+      <div class="form-group">
+        <label>Constituency</label>
+        <select id="assignConstituency" required>
+          <option value="">Select constituency</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Ward</label>
+        <select id="assignWard" required disabled>
+          <option value="">Select a constituency first</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-primary" id="saveOfficerAssignment">Save Assignment</button>
+        <button class="btn-secondary" onclick="closeModal('assignOfficer')">Cancel</button>
+      </div>
+      <div class="status-box" id="assignmentStatus"></div>
     </div>
   </div>
 </div>
@@ -460,14 +588,6 @@ body{font-family:'Poppins',sans-serif;background:var(--s100);color:var(--s800);m
     </div>
     <div class="modal-body">
       <div class="form-group"><label>Display Name</label><input type="text" id="settingsName" placeholder="Your display name"></div>
-      <div class="form-group">
-        <label>Ward (if applicable)</label>
-        <select id="settingsWard">
-          <option value="">— N/A —</option>
-          <option>Kanduyi</option><option>Kimilili</option><option>Webuye East</option>
-          <option>Webuye West</option><option>Tongaren</option><option>Sirisia</option>
-        </select>
-      </div>
       <div style="border-top:1px solid var(--s100);padding-top:16px;margin:4px 0 14px;">
         <p style="font-size:12px;color:var(--s500);font-weight:500;">To change password, use the Forgot Password link on the login page.</p>
       </div>
@@ -506,6 +626,7 @@ let currentUser = null;
 let idToken     = null;
 let reportData  = [];
 let selectedReportType = 'daily';
+let countyLocationData = [];
 
 // ── Helpers ───────────────────────────────────────────────
 function fmt(n) { return 'KES ' + Number(n).toLocaleString(); }
@@ -522,6 +643,134 @@ function timeAgo(ts) {
 async function getToken() {
   idToken = await currentUser.getIdToken();
   return idToken;
+}
+
+// Populate the officer assignment location selectors.
+function populateAssignmentLocations(constituencyId = '', wardId = '') {
+  const constituencySelect = document.getElementById('assignConstituency');
+  const wardSelect = document.getElementById('assignWard');
+
+  constituencySelect.innerHTML = '<option value="">Select constituency</option>';
+
+  countyLocationData.forEach(item => {
+    const option = document.createElement('option');
+    option.value = item.id;
+    option.textContent = item.name;
+    constituencySelect.appendChild(option);
+  });
+
+  function populateWards(selectedWardId = '') {
+    const selected = countyLocationData.find(
+      item => item.id === constituencySelect.value
+    );
+
+    wardSelect.innerHTML = '<option value="">Select ward</option>';
+
+    if (!selected) {
+      wardSelect.disabled = true;
+      return;
+    }
+
+    selected.wards.forEach(ward => {
+      const option = document.createElement('option');
+      option.value = ward.id;
+      option.textContent = ward.name;
+      wardSelect.appendChild(option);
+    });
+
+    wardSelect.disabled = false;
+    wardSelect.value = selectedWardId;
+  }
+
+  constituencySelect.value = constituencyId;
+  populateWards(wardId);
+  constituencySelect.onchange = () => populateWards();
+}
+
+// Load official constituency and ward options from the server.
+// Open the assignment modal for the selected officer.
+function openOfficerAssignment(officer) {
+  document.getElementById('assignOfficerUid').value = officer.uid;
+  document.getElementById('assignOfficerName').value = officer.username || '';
+  document.getElementById('assignOfficerEmail').value = officer.email || '';
+
+  populateAssignmentLocations(
+    officer.constituencyId || '',
+    officer.wardId || ''
+  );
+
+  document.getElementById('assignmentStatus').textContent = '';
+  openModal('assignOfficer');
+}
+
+async function loadLocationOptions() {
+  const constituencySelect = document.getElementById('offConstituency');
+  const wardSelect = document.getElementById('offWard');
+
+  constituencySelect.disabled = true;
+  wardSelect.disabled = true;
+
+  try {
+    const token = await getToken();
+    const res = await fetch('/api/locations', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const data = await res.json();
+
+    if (!res.ok || !data.success || !Array.isArray(data.constituencies)) {
+      throw new Error(data.message || 'Could not load county locations.');
+    }
+
+    countyLocationData = data.constituencies;
+    constituencySelect.innerHTML = '';
+
+    const firstOption = document.createElement('option');
+    firstOption.value = '';
+    firstOption.textContent = 'Select constituency';
+    constituencySelect.appendChild(firstOption);
+
+    countyLocationData.forEach(constituency => {
+      const option = document.createElement('option');
+      option.value = constituency.id;
+      option.textContent = constituency.name;
+      constituencySelect.appendChild(option);
+    });
+
+    wardSelect.innerHTML = '<option value="">Select a constituency first</option>';
+    constituencySelect.disabled = false;
+
+    constituencySelect.onchange = () => {
+      wardSelect.innerHTML = '';
+
+      const selected = countyLocationData.find(
+        item => item.id === constituencySelect.value
+      );
+
+      if (!selected) {
+        wardSelect.innerHTML = '<option value="">Select a constituency first</option>';
+        wardSelect.disabled = true;
+        return;
+      }
+
+      wardSelect.innerHTML = '<option value="">Select ward</option>';
+
+      selected.wards.forEach(ward => {
+        const option = document.createElement('option');
+        option.value = ward.id;
+        option.textContent = ward.name;
+        wardSelect.appendChild(option);
+      });
+
+      wardSelect.disabled = false;
+    };
+
+  } catch (error) {
+    countyLocationData = [];
+    constituencySelect.innerHTML = '<option value="">Locations unavailable</option>';
+    wardSelect.innerHTML = '<option value="">Cannot load wards</option>';
+    showModalStatus('officerStatus', '❌ ' + error.message, 'error');
+    console.error('Location options error:', error.message);
+  }
 }
 
 function showModalStatus(id, msg, type) {
@@ -565,6 +814,8 @@ onAuthStateChanged(auth, async (user) => {
   } catch {}
 
   if (role !== 'admin') { window.location.href = '/index.html'; return; }
+
+  await loadLocationOptions();
 
   document.getElementById('sbName').textContent    = username;
   document.getElementById('sbAvatar').textContent  = username.charAt(0).toUpperCase();
@@ -672,7 +923,7 @@ async function loadOfficers() {
 
     const tbody = document.getElementById('officersTableBody');
     if (!offData.officers.length) {
-      tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--s400);font-size:13px;">No officers yet. Add one!</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--s400);font-size:13px;">No officers yet. Add one!</td></tr>`;
       return;
     }
 
@@ -694,16 +945,88 @@ async function loadOfficers() {
             </div>
           </div>
         </td>
-        <td>${o.ward || '—'}</td>
+        <td>${o.constituencyName && o.wardName ? `${o.constituencyName} / ${o.wardName}` : (o.wardName || o.ward || '—')}</td>
         <td style="font-weight:700;color:var(--g700);">${collectedAmt}</td>
         <td>
           <span class="status-dot ${statusLabel}">${statusLabel}</span>
           <div style="font-size:10.5px;color:var(--s400);margin-top:2px;">${isOnline ? 'Active now' : 'Last: ' + lastSeenStr}</div>
         </td>
-      </tr>`;
+<td><button type="button" class="btn btn-sm" data-assign-officer="${o.uid}">${o.constituencyId && o.wardId ? 'Reassign' : 'Assign'}</button></td>
+</tr>`;
     }).join('');
   } catch (e) { console.log('loadOfficers err', e); }
 }
+
+// Handle Assign/Reassign clicks after every officer-table refresh.
+document.getElementById('officersTableBody').addEventListener('click', async (event) => {
+  const button = event.target.closest('[data-assign-officer]');
+  if (!button) return;
+
+  const uid = button.dataset.assignOfficer;
+  try {
+    const token = await getToken();
+    const res = await fetch('/api/officers', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const data = await res.json();
+
+    if (!res.ok || !data.success) {
+      throw new Error(data.message || 'Could not load officer details.');
+    }
+
+    const officer = data.officers.find(item => item.uid === uid);
+    if (!officer) throw new Error('Officer not found.');
+
+    openOfficerAssignment(officer);
+  } catch (error) {
+    alert(error.message);
+  }
+});
+
+// Save an administrator-controlled officer location assignment.
+document.getElementById('saveOfficerAssignment').addEventListener('click', async () => {
+  const uid = document.getElementById('assignOfficerUid').value;
+  const constituencyId = document.getElementById('assignConstituency').value;
+  const wardId = document.getElementById('assignWard').value;
+
+  if (!uid || !constituencyId || !wardId) {
+    showModalStatus('assignmentStatus', '❌ Select both a constituency and ward.', 'error');
+    return;
+  }
+
+  const button = document.getElementById('saveOfficerAssignment');
+  button.disabled = true;
+  showModalStatus('assignmentStatus', 'Saving officer assignment…', 'loading');
+
+  try {
+    const token = await getToken();
+    const res = await fetch(`/api/officers/${encodeURIComponent(uid)}/location`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ constituencyId, wardId })
+    });
+    const data = await res.json();
+
+    if (!res.ok || !data.success) {
+      throw new Error(data.message || 'Could not save officer assignment.');
+    }
+
+    showModalStatus(
+      'assignmentStatus',
+      `✅ Assigned to ${data.constituencyName} / ${data.wardName}.`,
+      'success'
+    );
+    await loadOfficers();
+    setTimeout(() => closeModal('assignOfficer'), 900);
+  } catch (error) {
+    showModalStatus('assignmentStatus', '❌ ' + error.message, 'error');
+  } finally {
+    button.disabled = false;
+  }
+});
 
 // Refresh officers every 30s
 setInterval(loadOfficers, 30000);
@@ -719,7 +1042,7 @@ async function loadOfficerDropdown() {
     data.officers.forEach(o => {
       const opt   = document.createElement('option');
       opt.value   = o.uid;
-      opt.textContent = `${o.username || o.email} (${o.ward})`;
+      opt.textContent = `${o.username || o.email} (${o.constituencyName && o.wardName ? `${o.constituencyName} / ${o.wardName}` : (o.wardName || o.ward || 'Unassigned')})`;
       sel.appendChild(opt);
     });
   } catch {}
@@ -728,37 +1051,65 @@ async function loadOfficerDropdown() {
 // ── Create Officer ─────────────────────────────────────────
 document.getElementById('createOfficerBtn').addEventListener('click', async () => {
   const username = document.getElementById('offName').value.trim();
-  const email    = document.getElementById('offEmail').value.trim();
-  const password = document.getElementById('offPass').value.trim();
-  const ward     = document.getElementById('offWard').value;
-  const role     = document.getElementById('offRole').value;
+  const email = document.getElementById('offEmail').value.trim();
+  const password = document.getElementById('offPass').value;
+  const constituencyId = document.getElementById('offConstituency').value;
+  const wardId = document.getElementById('offWard').value;
 
-  if (!username || !email || !password) {
-    showModalStatus('officerStatus', '❌ Please fill all fields', 'error'); return;
+  if (!username || !email || !password || !constituencyId || !wardId) {
+    showModalStatus(
+      'officerStatus',
+      '❌ Complete all fields and select both constituency and ward.',
+      'error'
+    );
+    return;
   }
 
   showModalStatus('officerStatus', 'Creating officer account…', 'loading');
 
   try {
     const token = await getToken();
-    const res   = await fetch('/api/create-officer', {
+    const res = await fetch('/api/create-officer', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ username, email, password, ward, role })
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        username,
+        email,
+        password,
+        constituencyId,
+        wardId
+      })
     });
+
     const data = await res.json();
+
     if (data.success) {
-      showModalStatus('officerStatus', `✅ ${data.message}`, 'success');
+      showModalStatus('officerStatus', '✅ ' + data.message, 'success');
       document.getElementById('offName').value = '';
       document.getElementById('offEmail').value = '';
       document.getElementById('offPass').value = '';
+      document.getElementById('offConstituency').value = '';
+      document.getElementById('offWard').innerHTML =
+        '<option value="">Select a constituency first</option>';
+      document.getElementById('offWard').disabled = true;
+
       loadOfficers();
       loadOfficerDropdown();
+    } else if (data.accountCreated) {
+      showModalStatus(
+        'officerStatus',
+        '⚠️ ' + data.message + ' UID: ' + data.uid + '. Do not retry with the same email until the profile is checked.',
+        'error'
+      );
     } else {
-      showModalStatus('officerStatus', '❌ ' + (data.error || data.message), 'error');
+      showModalStatus('officerStatus', '❌ ' + (data.message || 'Could not create officer.'), 'error');
     }
-  } catch {
-    showModalStatus('officerStatus', '❌ Network error', 'error');
+  } catch (error) {
+    showModalStatus('officerStatus', '❌ Network error. Check the server before retrying.', 'error');
+    console.error('Create officer error:', error.message);
   }
 });
 
@@ -902,7 +1253,6 @@ document.getElementById('sendBroadcastBtn').addEventListener('click', async () =
 // ── Settings ───────────────────────────────────────────────
 document.getElementById('saveSettingsBtn').addEventListener('click', async () => {
   const username = document.getElementById('settingsName').value.trim();
-  const ward     = document.getElementById('settingsWard').value;
   showModalStatus('settingsStatus', 'Saving…', 'loading');
 
   try {
@@ -910,7 +1260,7 @@ document.getElementById('saveSettingsBtn').addEventListener('click', async () =>
     const res   = await fetch('/api/profile/update', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ username, ward })
+      body: JSON.stringify({ username })
     });
     const data = await res.json();
     if (data.success) {

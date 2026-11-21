@@ -288,6 +288,10 @@ input::placeholder{color:var(--s400);}
         </div>
       </div>
       <div class="form-group">
+        <label for="mpesaSubType">Specific Charge</label>
+        <select id="mpesaSubType"></select>
+      </div>
+      <div class="form-group">
         <label>Vehicle Plate / Client ID</label>
         <div class="plate-wrap">
           <input type="text" id="plate" placeholder="e.g. KCA 123A or tap 📷 to scan" required>
@@ -332,6 +336,10 @@ input::placeholder{color:var(--s400);}
         </div>
       </div>
       <div class="form-group">
+        <label for="cashSubType">Specific Charge</label>
+        <select id="cashSubType"></select>
+      </div>
+      <div class="form-group">
         <label>Ward</label>
         <select id="cashWard">
           <option>Kanduyi</option><option>Kimilili</option><option>Webuye East</option>
@@ -368,13 +376,6 @@ input::placeholder{color:var(--s400);}
       <div class="form-group">
         <label>Display Name</label>
         <input type="text" id="settingsName" placeholder="Your display name">
-      </div>
-      <div class="form-group">
-        <label>Ward Assignment</label>
-        <select id="settingsWard">
-          <option>Kanduyi</option><option>Kimilili</option><option>Webuye East</option>
-          <option>Webuye West</option><option>Tongaren</option><option>Sirisia</option>
-        </select>
       </div>
       <div style="border-top:1px solid var(--s100);padding-top:16px;margin-top:4px;">
         <p style="font-size:12px;color:var(--s500);margin-bottom:14px;font-weight:500;">To change password, use the Forgot Password link on the login page.</p>
@@ -433,7 +434,47 @@ let currentUser    = null;
 let idToken        = null;
 let selectedType   = 'Parking';
 let selectedCashType = 'Parking';
+
+const revenueSubTypes = {
+  'Parking': [
+    'General Vehicle Parking',
+    'Bodaboda Parking',
+    'Enclosed Bus Park'
+  ],
+  'Market Fee': [
+    'Daily Trader Fee',
+    'Produce Fee',
+    'Market Vehicle / Transport Charge'
+  ],
+  'Cess': [
+    'Maize Cess',
+    'Coffee / Tea Cess',
+    'Other Produce Cess'
+  ],
+  'Business Permit': [
+    'New Permit',
+    'Renewal',
+    'Duplicate',
+    'Transfer'
+  ]
+};
+
+let selectedMpesaSubType = '';
+let selectedCashSubType = '';
+
+function populateSubTypes(selectId, revenueType) {
+  const select = document.getElementById(selectId);
+  const options = revenueSubTypes[revenueType] || [];
+
+  select.innerHTML = options.map((item, index) =>
+    `<option value="${item}">${item}</option>`
+  ).join('');
+
+  return select.value;
+}
+
 let offlineQueue   = JSON.parse(localStorage.getItem('offlineQueue') || '[]');
+let offlineSyncInProgress = false;
 let cameraStream   = null;
 let ocrTarget      = 'plate'; // 'plate' or 'cashClient'
 
@@ -475,23 +516,98 @@ window.addEventListener('online',  updateOnlineStatus);
 window.addEventListener('offline', updateOnlineStatus);
 
 async function syncOfflineQueue() {
-  if (!offlineQueue.length || !currentUser) return;
-  try {
-    const token = await getToken();
+  if (offlineSyncInProgress || !offlineQueue.length || !currentUser || !navigator.onLine) return;
+
+  offlineSyncInProgress = true;
+  let totalSynced = 0;
+  let totalSkipped = 0;
+  const blocked = new Map();
+
+  async function sendBatch(batch, token) {
     const res = await fetch('/api/sync-offline', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ transactions: offlineQueue })
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ transactions: batch })
     });
-    const data = await res.json();
-    if (data.success) {
-      offlineQueue = [];
-      localStorage.setItem('offlineQueue', '[]');
-      if (data.synced > 0) {
-        showStatus(`✅ Synced ${data.synced} offline transaction(s)!`, 'success');
+
+    let data = {};
+    try {
+      data = await res.json();
+    } catch {}
+
+    if (res.ok && data.success) {
+      const synced = Number(data.synced);
+      const skipped = Number(data.skipped);
+
+      if (
+        !Number.isInteger(synced) || synced < 0 ||
+        !Number.isInteger(skipped) || skipped < 0 ||
+        synced + skipped !== batch.length
+      ) {
+        throw new Error('Incomplete sync confirmation. Queue retained.');
+      }
+
+      totalSynced += synced;
+      totalSkipped += skipped;
+      return batch;
+    }
+
+    if ([400, 403, 409].includes(res.status)) {
+      if (batch.length === 1) {
+        blocked.set(batch[0], data.error || 'This transaction needs review.');
+        return [];
+      }
+
+      const middle = Math.floor(batch.length / 2);
+      const first = await sendBatch(batch.slice(0, middle), token);
+      const second = await sendBatch(batch.slice(middle), token);
+      return [...first, ...second];
+    }
+
+    throw new Error(data.error || 'Offline sync failed.');
+  }
+
+  try {
+    while (navigator.onLine) {
+      const chunk = offlineQueue
+        .filter(tx => !blocked.has(tx))
+        .slice(0, 50);
+
+      if (!chunk.length) break;
+
+      const token = await getToken();
+      const completed = await sendBatch(chunk, token);
+
+      if (completed.length) {
+        const completedSet = new Set(completed);
+        offlineQueue = offlineQueue.filter(tx => !completedSet.has(tx));
+        localStorage.setItem('offlineQueue', JSON.stringify(offlineQueue));
+      }
+
+      if (!completed.length && chunk.every(tx => blocked.has(tx))) {
+        break;
       }
     }
-  } catch (e) { console.log('Sync failed:', e); }
+
+    if (blocked.size) {
+      showStatus(
+        `⚠️ ${blocked.size} offline transaction(s) need review. Other valid transactions were synced. The affected records remain saved on this device.`,
+        'error'
+      );
+    } else if (totalSynced > 0) {
+      showStatus(`✅ Synced ${totalSynced} offline transaction(s)!`, 'success');
+    } else if (totalSkipped > 0) {
+      showStatus('✅ Offline transactions were already recorded.', 'success');
+    }
+  } catch (e) {
+    console.log('Sync failed:', e);
+    showStatus('⚠️ Sync interrupted. Unconfirmed transactions remain saved for retry.', 'error');
+  } finally {
+    offlineSyncInProgress = false;
+  }
 }
 
 document.getElementById('syncBtn').addEventListener('click', syncOfflineQueue);
@@ -541,8 +657,6 @@ onAuthStateChanged(auth, async (user) => {
   for (let o of wardSel.options) if (o.value === ward) o.selected = true;
   const cWardSel = document.getElementById('cashWard');
   for (let o of cWardSel.options) if (o.value === ward) o.selected = true;
-  const sWardSel = document.getElementById('settingsWard');
-  for (let o of sWardSel.options) if (o.value === ward) o.selected = true;
 
   updateOnlineStatus();
   startHeartbeat();
@@ -591,7 +705,7 @@ function renderTransactions(txs) {
           <div class="tx-icon ${cls}">${icon}</div>
           <div class="tx-details">
             <strong>${tx.plate || tx.cashClient || 'N/A'}</strong>
-            <span>${tx.revenueType || '—'} · ${tx._offline ? 'Pending sync' : timeAgo(tx.createdAt)}</span>
+            <span>${tx.revenueType || '—'}${tx.revenueSubType ? ' · ' + tx.revenueSubType : ''} · ${tx._offline ? 'Pending sync' : timeAgo(tx.createdAt)}</span>
           </div>
         </div>
         <div class="tx-right">
@@ -633,21 +747,44 @@ function listenBroadcasts(uid) {
   });
 }
 
-// ── Revenue type selection ─────────────────────────────────
+// ── Revenue type and specific charge selection ────────────
+function updateMpesaSubType() {
+  selectedMpesaSubType = populateSubTypes('mpesaSubType', selectedType);
+}
+
+function updateCashSubType() {
+  selectedCashSubType = populateSubTypes('cashSubType', selectedCashType);
+}
+
 document.querySelectorAll('[data-type]').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('[data-type]').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     selectedType = btn.dataset.type;
+    updateMpesaSubType();
   });
 });
+
 document.querySelectorAll('[data-cash-type]').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('[data-cash-type]').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     selectedCashType = btn.dataset.cashType;
+    updateCashSubType();
   });
 });
+
+document.getElementById('mpesaSubType').addEventListener('change', event => {
+  selectedMpesaSubType = event.target.value;
+});
+
+document.getElementById('cashSubType').addEventListener('change', event => {
+  selectedCashSubType = event.target.value;
+});
+
+// Initialize both payment forms.
+updateMpesaSubType();
+updateCashSubType();
 
 // ── Tab switch ────────────────────────────────────────────
 document.getElementById('mpesaTab').addEventListener('click', () => {
@@ -663,37 +800,86 @@ document.getElementById('cashTab').addEventListener('click', () => {
   document.getElementById('mpesaSection').classList.add('hidden');
 });
 
-// ── M-PESA Pay ────────────────────────────────────────────
+// ── M-PESA Pay ──
 document.getElementById('payBtn').addEventListener('click', async () => {
   const amount = document.getElementById('amount').value;
-  const plate  = document.getElementById('plate').value.trim();
-  const phone  = document.getElementById('phone').value.trim();
-  const ward   = document.getElementById('ward').value;
+  const plate = document.getElementById('plate').value.trim();
+  const phone = document.getElementById('phone').value.trim();
+  const ward = document.getElementById('ward').value;
 
-  if (!amount || !plate || !phone) { showStatus('Please fill all required fields.', 'error'); return; }
+  if (!amount || !plate || !phone) {
+    showStatus('Please fill all required fields.', 'error');
+    return;
+  }
 
   const btn = document.getElementById('payBtn');
-  btn.disabled    = true;
-  showStatus('Sending STK Push…', 'loading');
+  const pendingKey = 'pendingMpesaRequest:' + currentUser.uid;
+  const payload = {
+    phone, amount, plate, ward,
+    revenueType: selectedType,
+    revenueSubType: selectedMpesaSubType
+  };
+
+  btn.disabled = true;
+  showStatus('Preparing M-PESA request…', 'loading');
 
   try {
+    let pending = null;
+
+    try {
+      pending = JSON.parse(localStorage.getItem(pendingKey) || 'null');
+    } catch {
+      localStorage.removeItem(pendingKey);
+    }
+
+    if (pending) {
+      const sameRequest = Object.keys(payload).every(
+        key => pending[key] === payload[key]
+      );
+
+      if (!sameRequest) {
+        showStatus(
+          'A previous M-PESA request is unresolved. Restore its original details before retrying.',
+          'error'
+        );
+        return;
+      }
+
+      showStatus('Retrying the same M-PESA request…', 'loading');
+    } else {
+      pending = {
+        ...payload,
+        idempotencyKey: crypto.randomUUID()
+      };
+      localStorage.setItem(pendingKey, JSON.stringify(pending));
+    }
+
     const token = await getToken();
-    const res   = await fetch('/api/pay', {
+    const res = await fetch('/api/pay', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ phone, amount, plate, ward, revenueType: selectedType })
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(pending)
     });
+
     const data = await res.json();
 
-    if (data.success) {
-      showStatus('✅ STK Push sent! Ask customer to enter M-PESA PIN.', 'success');
-      document.getElementById('plate').value = '';
-      document.getElementById('phone').value = '';
-    } else {
-      showStatus('❌ ' + (data.message || data.error), 'error');
+    if (!res.ok || !data.success) {
+      if ([400, 401, 403, 422].includes(res.status)) {
+        localStorage.removeItem(pendingKey);
+      }
+      showStatus('❌ ' + (data.message || data.error || 'Payment request failed.'), 'error');
+      return;
     }
-  } catch {
-    showStatus('❌ Network error. Please try again.', 'error');
+
+    localStorage.removeItem(pendingKey);
+    showStatus('✅ STK Push sent! Ask customer to enter M-PESA PIN.', 'success');
+    document.getElementById('plate').value = '';
+    document.getElementById('phone').value = '';
+  } catch (error) {
+    showStatus('❌ Network or server error. Keep the same details and retry; do not create a new request.', 'error');
   } finally {
     btn.disabled = false;
   }
@@ -702,46 +888,90 @@ document.getElementById('payBtn').addEventListener('click', async () => {
 // ── Cash Payment ──────────────────────────────────────────
 document.getElementById('cashBtn').addEventListener('click', async () => {
   const amount = document.getElementById('cashAmount').value;
-  const plate  = document.getElementById('cashClient').value.trim();
-  const ward   = document.getElementById('cashWard').value;
+  const plate = document.getElementById('cashClient').value.trim();
+  const ward = document.getElementById('cashWard').value;
 
-  if (!amount) { showStatus('Please enter cash amount.', 'error'); return; }
+  if (!amount) {
+    showStatus('Please enter cash amount.', 'error');
+    return;
+  }
 
-  // Offline handling
   if (!navigator.onLine) {
     const receipt = 'OFFLINE-' + Date.now() + '-' + Math.random().toString(36).slice(2,6).toUpperCase();
-    const tx = { amount, plate, ward, revenueType: selectedCashType, receipt, createdAt: new Date().toISOString() };
+    const tx = {
+      createdBy: currentUser.uid,
+      amount,
+      plate,
+      ward,
+      revenueType: selectedCashType,
+      revenueSubType: selectedCashSubType,
+      receipt,
+      createdAt: new Date().toISOString()
+    };
+
     offlineQueue.push(tx);
     localStorage.setItem('offlineQueue', JSON.stringify(offlineQueue));
     showStatus('💾 Saved offline. Will sync when connection is restored.', 'success');
     document.getElementById('cashAmount').value = '';
     document.getElementById('cashClient').value = '';
-    renderTransactions([]); // refresh to show offline items
+    renderTransactions([]);
     return;
   }
 
   const btn = document.getElementById('cashBtn');
+  const pendingKey = 'pendingCashRequest:' + currentUser.uid;
   btn.disabled = true;
   showStatus('Recording cash payment…', 'loading');
 
   try {
+    let pending = null;
+
+    try {
+      pending = JSON.parse(localStorage.getItem(pendingKey) || 'null');
+    } catch {
+      localStorage.removeItem(pendingKey);
+    }
+
+    if (!pending) {
+      pending = {
+        idempotencyKey: crypto.randomUUID(),
+        amount,
+        plate,
+        revenueType: selectedCashType,
+        revenueSubType: selectedCashSubType
+      };
+
+      localStorage.setItem(pendingKey, JSON.stringify(pending));
+    } else {
+      showStatus('Retrying your previous cash request…', 'loading');
+    }
+
     const token = await getToken();
-    const res   = await fetch('/api/cash', {
+    const res = await fetch('/api/cash', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ amount, plate, ward, revenueType: selectedCashType })
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(pending)
     });
+
     const data = await res.json();
 
-    if (data.success) {
-      showStatus(`✅ Cash recorded! Receipt: ${data.receipt}`, 'success');
-      document.getElementById('cashAmount').value = '';
-      document.getElementById('cashClient').value = '';
-    } else {
-      showStatus('❌ ' + (data.error || 'Error recording payment'), 'error');
+    if (!res.ok || !data.success) {
+      if (res.status >= 400 && res.status < 500 && res.status !== 409 && res.status !== 429) {
+        localStorage.removeItem(pendingKey);
+      }
+
+      throw new Error(data.error || 'Error recording payment.');
     }
-  } catch {
-    showStatus('❌ Network error.', 'error');
+
+    localStorage.removeItem(pendingKey);
+    showStatus(`✅ Cash recorded! Receipt: ${data.receipt}`, 'success');
+    document.getElementById('cashAmount').value = '';
+    document.getElementById('cashClient').value = '';
+  } catch (error) {
+    showStatus('❌ ' + (error.message || 'Network error. Your request is saved for retry.'), 'error');
   } finally {
     btn.disabled = false;
   }
@@ -768,7 +998,6 @@ document.getElementById('settingsBtn').addEventListener('click', () => {
 
 document.getElementById('saveSettingsBtn').addEventListener('click', async () => {
   const username = document.getElementById('settingsName').value.trim();
-  const ward     = document.getElementById('settingsWard').value;
   const st       = document.getElementById('settingsStatus');
   st.className   = 'modal-status loading';
   st.style.display = 'flex';
@@ -779,7 +1008,7 @@ document.getElementById('saveSettingsBtn').addEventListener('click', async () =>
     const res   = await fetch('/api/profile/update', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ username, ward })
+      body: JSON.stringify({ username })
     });
     const data = await res.json();
     if (data.success) {

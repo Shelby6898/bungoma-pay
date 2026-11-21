@@ -1,0 +1,44 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function isOfficer() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'officer';
+    }
+
+    match /users/{userId} {
+      allow get: if signedIn()
+        && (request.auth.uid == userId || isAdmin());
+      allow list: if isAdmin();
+      allow create, update, delete: if false;
+    }
+
+    match /transactions/{transactionId} {
+      allow get, list: if isAdmin()
+        || (isOfficer() && resource.data.createdBy == request.auth.uid);
+      allow create, update, delete: if false;
+    }
+
+    match /broadcasts/{broadcastId} {
+      allow get, list: if isAdmin() || isOfficer();
+      allow create, update, delete: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
