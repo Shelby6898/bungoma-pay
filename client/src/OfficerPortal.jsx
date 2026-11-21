@@ -124,7 +124,7 @@ export default function OfficerPortal({ profile }) {
     }
     const payload = { amount: cashAmount, plate: cashClient.trim(), revenueType: cashType, revenueSubType: cashSub }
     if (!online) {
-      const offline = { ...payload, createdBy: user.uid, receipt: 'OFFLINE-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6).toUpperCase(), createdAt: new Date().toISOString() }
+      const offline = { ...payload, revenueSubType: cashSub, createdBy: user.uid, receipt: 'OFFLINE-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6).toUpperCase(), createdAt: new Date().toISOString() }
       setQueue(current => [...current, offline])
       setStatus({ type: 'success', message: 'Saved securely on this device. It will sync when you are online.' })
       setCashAmount(''); setCashClient('')
