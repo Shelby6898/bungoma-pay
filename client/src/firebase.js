@@ -1,6 +1,6 @@
 import { getApp, getApps, initializeApp } from 'firebase/app'
 import { getAuth } from 'firebase/auth'
-import { getFirestore } from 'firebase/firestore'
+import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore'
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -26,3 +26,11 @@ const app = getApps().length ? getApp() : initializeApp(firebaseConfig)
 export const auth = getAuth(app)
 
 export const db = getFirestore(app)
+
+if (
+  import.meta.env.DEV &&
+  import.meta.env.VITE_USE_FIRESTORE_EMULATOR === 'true'
+) {
+  connectFirestoreEmulator(db, '127.0.0.1', 8080)
+  console.info('Firestore connected to local emulator')
+}

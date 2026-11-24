@@ -2004,3 +2004,40 @@
     padding: 11px;
   }
 }
+
+/* BROADCAST TARGETING */
+.broadcast-form select {
+  width: 100%;
+  min-height: 42px;
+  padding: 10px 12px;
+  color: var(--text);
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  outline: none;
+  font: inherit;
+  font-size: 12px;
+}
+
+.broadcast-form select:focus {
+  border-color: var(--blue);
+}
+
+.broadcast-form select:disabled {
+  opacity: .6;
+  cursor: not-allowed;
+}
+
+.broadcast-target-hint,
+.broadcast-target-error {
+  margin: 0;
+  font-size: 11px;
+}
+
+.broadcast-target-hint {
+  color: var(--muted);
+}
+
+.broadcast-target-error {
+  color: #b42318;
+}

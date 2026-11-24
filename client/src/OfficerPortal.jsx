@@ -38,7 +38,7 @@ export default function OfficerPortal({ profile }) {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [online, setOnline] = useState(navigator.onLine)
 
-  const total = useMemo(() => transactions.reduce((sum, tx) => sum + Number(tx.amount || 0), 0), [transactions])
+  const total = useMemo(() => transactions.reduce((sum, tx) => tx.status === 'PAID' ? sum + Number(tx.amount || 0) : sum, 0), [transactions])
   const token = async () => auth.currentUser?.getIdToken()
 
   useEffect(() => {
@@ -47,11 +47,30 @@ export default function OfficerPortal({ profile }) {
     const stopTransactions = onSnapshot(txQuery, snapshot => {
       setTransactions(snapshot.docs.map(item => ({ id: item.id, ...item.data() })))
     }, () => setStatus({ type: 'error', message: 'Could not load your live transactions.' }))
-    const stopBroadcasts = onSnapshot(query(collection(db, 'broadcasts'), orderBy('createdAt', 'desc')), snapshot => {
-      const unread = snapshot.docs.map(item => ({ id: item.id, ...item.data() }))
-        .find(item => !(item.readBy || []).includes(user.uid))
-      setBroadcast(unread || null)
-    })
+    const refreshBroadcasts = async () => {
+      try {
+        const idToken = await token()
+        const response = await fetch('/api/broadcasts', {
+          headers: { Authorization: 'Bearer ' + idToken },
+        })
+        const result = await response.json().catch(() => ({}))
+
+        if (!response.ok || !result.success) {
+          throw new Error(result.message || 'Could not load announcements.')
+        }
+
+        const unread = (result.broadcasts || [])
+          .find(item => !(item.readBy || []).includes(user.uid))
+
+        setBroadcast(unread || null)
+      } catch (error) {
+        console.error('[BROADCASTS-API] Error:', error)
+      }
+    }
+
+    void refreshBroadcasts()
+    const broadcastRefresh = window.setInterval(refreshBroadcasts, 30000)
+
     const heartbeat = window.setInterval(async () => {
       if (!navigator.onLine || !auth.currentUser) return
       const idToken = await token()
@@ -62,7 +81,7 @@ export default function OfficerPortal({ profile }) {
     window.addEventListener('offline', onlineHandler)
     return () => {
       stopTransactions()
-      stopBroadcasts()
+      window.clearInterval(broadcastRefresh)
       window.clearInterval(heartbeat)
       window.removeEventListener('online', onlineHandler)
       window.removeEventListener('offline', onlineHandler)

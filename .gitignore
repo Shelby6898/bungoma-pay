@@ -4,3 +4,10 @@ node_modules/
 .DS_Store
 serviceAccountKey.json
 firebase-key.json
+
+# Firebase credentials and backups
+firebase-key.json
+firebase-key.json.*
+firebase-service-account.txt
+*service-account*.json
+*service-account*.txt

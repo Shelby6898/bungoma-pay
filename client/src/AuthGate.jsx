@@ -102,7 +102,16 @@ export default function AuthGate({ children }) {
           },
         })
 
-        const result = await response.json()
+        const responseText = await response.text()
+        let result
+
+        try {
+          result = JSON.parse(responseText)
+        } catch {
+          throw new Error(
+            `Account verification returned non-JSON (HTTP ${response.status}, ${response.headers.get('content-type') || 'unknown content type'}). Check the API response.`
+          )
+        }
 
         if (!response.ok || !result.success) {
           throw new Error(result.message || 'Could not verify your account.')
@@ -145,7 +154,7 @@ export default function AuthGate({ children }) {
         'auth/network-request-failed': 'Network error. Check your connection.',
       }
 
-      setError(messages[err.code] || 'Sign-in failed. Please try again.')
+      setError(`${messages[err.code] || 'Sign-in failed. Please try again.'} [${err.code || 'unknown'}]`)
     } finally {
       setBusy(false)
     }

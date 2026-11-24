@@ -1736,36 +1736,195 @@ app.post('/api/report', verifyToken, requireAdmin, async (req, res) => {
   }
 });
 
-// ── Broadcast ──────────────────────────────────────────────
+// ── Targeted Broadcasts ─────────────────────────────────────
 app.post('/api/broadcast', verifyToken, requireAdmin, async (req, res) => {
   try {
-    const { message } = req.body;
-    if (!message) return res.status(400).json({ success: false, message: 'Message required' });
+    const message = typeof req.body?.message === 'string'
+      ? req.body.message.trim()
+      : '';
+
+    if (!message || message.length > 2000) {
+      return res.status(400).json({
+        success: false,
+        message: 'A message of 1–2000 characters is required.'
+      });
+    }
+
+    const target = req.body?.target || { scope: 'all' };
+    const scope = target.scope || 'all';
+    let officers = [];
+
+    if (scope === 'all' || scope === 'constituency' || scope === 'ward') {
+      const snapshot = await db.collection('users')
+        .where('role', '==', 'officer')
+        .get();
+
+      officers = snapshot.docs.map(doc => ({
+        uid: doc.id,
+        ...doc.data()
+      }));
+
+      if (scope === 'constituency') {
+        const constituency = locationData.getConstituencyById(target.constituencyId);
+        if (!constituency) {
+          return res.status(400).json({
+            success: false,
+            message: 'Select a valid constituency.'
+          });
+        }
+
+        officers = officers.filter(
+          officer => officer.constituencyId === constituency.id
+        );
+      }
+
+      if (scope === 'ward') {
+        const constituency = locationData.getConstituencyById(target.constituencyId);
+        const ward = locationData.getWardById(target.constituencyId, target.wardId);
+
+        if (!constituency || !ward) {
+          return res.status(400).json({
+            success: false,
+            message: 'Select a valid constituency and ward.'
+          });
+        }
+
+        officers = officers.filter(
+          officer =>
+            officer.constituencyId === constituency.id &&
+            officer.wardId === ward.id
+        );
+      }
+    } else if (scope === 'officer') {
+      if (typeof target.officerUid !== 'string' || !target.officerUid.trim()) {
+        return res.status(400).json({
+          success: false,
+          message: 'Select a valid officer.'
+        });
+      }
+
+      const officerDoc = await db.collection('users')
+        .doc(target.officerUid.trim())
+        .get();
+
+      if (!officerDoc.exists || officerDoc.data().role !== 'officer') {
+        return res.status(404).json({
+          success: false,
+          message: 'The selected officer was not found.'
+        });
+      }
+
+      officers = [{ uid: officerDoc.id, ...officerDoc.data() }];
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid broadcast target.'
+      });
+    }
+
+    const recipientUids = [...new Set(officers.map(officer => officer.uid))];
+
+    if (recipientUids.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'There are no officers assigned to the selected target.'
+      });
+    }
 
     const senderData = await getOfficerData(req.user.uid);
-    await db.collection('broadcasts').add({
-      message,
-      senderName: senderData.username || 'Admin',
-      senderUid:  req.user.uid,
-      readBy:     [],
-      createdAt:  FieldValue.serverTimestamp()
-    });
 
-    res.json({ success: true, message: 'Broadcast sent' });
+    const broadcast = {
+      message,
+      senderName: senderData.username || senderData.name || 'Admin',
+      senderUid: req.user.uid,
+      targetScope: scope,
+      targetConstituencyId: scope === 'constituency' || scope === 'ward'
+        ? target.constituencyId
+        : null,
+      targetWardId: scope === 'ward' ? target.wardId : null,
+      targetOfficerUid: scope === 'officer' ? target.officerUid.trim() : null,
+      recipientUids,
+      recipientCount: recipientUids.length,
+      readBy: [],
+      createdAt: FieldValue.serverTimestamp()
+    };
+
+    await db.collection('broadcasts').add(broadcast);
+
+    return res.json({
+      success: true,
+      message: `Announcement sent to ${recipientUids.length} officer(s).`,
+      recipientCount: recipientUids.length
+    });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    console.error('Broadcast creation error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Could not send the announcement.'
+    });
   }
 });
 
-// Mark broadcast read
-app.post('/api/broadcast/:id/read', verifyToken, async (req, res) => {
+// Retrieve announcements addressed to the authenticated officer.
+app.get('/api/broadcasts', verifyToken, requireOfficer, async (req, res) => {
   try {
-    await db.collection('broadcasts').doc(req.params.id).update({
+    const snapshot = await db.collection('broadcasts')
+      .where('recipientUids', 'array-contains', req.user.uid)
+      .orderBy('createdAt', 'desc')
+      .limit(100)
+      .get();
+
+    const broadcasts = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+
+    res.json({ success: true, broadcasts });
+  } catch (error) {
+    console.error('[BROADCASTS-API] Failed to load announcements:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Could not load announcements.'
+    });
+  }
+});
+
+// Only an intended officer recipient may acknowledge a broadcast.
+app.post('/api/broadcast/:id/read', verifyToken, requireOfficer, async (req, res) => {
+  try {
+    const broadcastRef = db.collection('broadcasts').doc(req.params.id);
+    const broadcastDoc = await broadcastRef.get();
+
+    if (!broadcastDoc.exists) {
+      return res.status(404).json({
+        success: false,
+        message: 'Announcement not found.'
+      });
+    }
+
+    const broadcast = broadcastDoc.data();
+
+    if (
+      !Array.isArray(broadcast.recipientUids) ||
+      !broadcast.recipientUids.includes(req.user.uid)
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: 'You are not a recipient of this announcement.'
+      });
+    }
+
+    await broadcastRef.update({
       readBy: FieldValue.arrayUnion(req.user.uid)
     });
-    res.json({ success: true });
+
+    return res.json({ success: true });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    console.error('Broadcast acknowledgement error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Could not update announcement status.'
+    });
   }
 });
 

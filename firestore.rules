@@ -33,7 +33,14 @@ service cloud.firestore {
     }
 
     match /broadcasts/{broadcastId} {
-      allow get, list: if isAdmin() || isOfficer();
+      allow get, list: if signedIn()
+        && (
+          (
+            resource.data.recipientUids is list
+            && request.auth.uid in resource.data.recipientUids
+          )
+          || isAdmin()
+        );
       allow create, update, delete: if false;
     }
 
