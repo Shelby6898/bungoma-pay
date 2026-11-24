@@ -17,6 +17,7 @@ const { createMpesaCallbackRecovery } = require('./mpesa-callback-recovery');
 const { createAnalyticsAggregateUpdater } = require('./analytics-aggregates');
 const { createAdminStatsHandler } = require('./admin-stats-handler');
 const { serializeOfficerBroadcast } = require('./broadcast-response');
+const { mergeWardReportDocs } = require('./transaction-ward');
 
 const app = express();
 
@@ -590,7 +591,7 @@ app.post('/api/pay', paymentLimiter, verifyToken, requireOfficer, async (req, re
       phone: fp,
       revenueType,
       revenueSubType,
-      ward: officerData.constituencyName || '',
+      ward: officerData.wardName || '',
       constituencyId: officerData.constituencyId || '',
       constituencyName: officerData.constituencyName || '',
       wardId: officerData.wardId || '',
@@ -882,7 +883,7 @@ app.post('/api/cash', cashLimiter, verifyToken, requireOfficer, async (req, res)
       const cashTransaction = {
         amount: normalizedAmount,
         plate: plateValue,
-        ward: officerData.constituencyName,
+        ward: officerData.wardName || '',
         constituencyId: officerData.constituencyId,
         constituencyName: officerData.constituencyName,
         wardId: officerData.wardId,
@@ -1506,7 +1507,7 @@ app.get('/api/admin/officer-activity', verifyToken, requireAdmin, async (req, re
       officers.set(doc.id, {
         uid: doc.id,
         username: data.username || data.name || data.email || 'Officer',
-        ward: data.ward || 'Unassigned',
+        ward: data.wardName || data.ward || 'Unassigned',
         total: 0,
         transactions: 0
       });
@@ -1563,7 +1564,7 @@ app.get('/api/officers', verifyToken, requireAdmin, async (req, res) => {
         uid: doc.id,
         username: data.username || '',
         email: data.email || '',
-        ward: data.ward || '',
+        ward: data.wardName || data.ward || '',
         constituencyId: data.constituencyId || '',
         constituencyName: data.constituencyName || '',
         wardId: data.wardId || '',
@@ -1644,6 +1645,7 @@ app.post('/api/report', verifyToken, requireAdmin, async (req, res) => {
   try {
     const { type, startDate, endDate, ward, officerUid } = req.body;
     let query = db.collection('transactions');
+    let wardReportDocs = null;
 
     if (type === 'daily') {
       const s = Timestamp.fromDate(moment(startDate).startOf('day').toDate());
@@ -1654,12 +1656,20 @@ app.post('/api/report', verifyToken, requireAdmin, async (req, res) => {
       const e = Timestamp.fromDate(moment(endDate).endOf('day').toDate());
       query = query.where('createdAt', '>=', s).where('createdAt', '<=', e);
     } else if (type === 'ward') {
-      query = query.where('ward', '==', ward);
+      if (typeof ward !== 'string' || !ward.trim()) {
+        return res.status(400).json({ success: false, message: 'A valid ward is required.' });
+      }
+      const requestedWard = ward.trim();
+      const results = await Promise.all([
+        db.collection('transactions').where('wardName', '==', requestedWard).get(),
+        db.collection('transactions').where('ward', '==', requestedWard).get()
+      ]);
+      wardReportDocs = mergeWardReportDocs(results[0].docs, results[1].docs, requestedWard);
     } else if (type === 'officer') {
       query = query.where('createdBy', '==', officerUid);
     }
 
-    const snapshot = await query.orderBy('createdAt', 'desc').get();
+    const reportDocs = wardReportDocs || (await query.orderBy('createdAt', 'desc').get()).docs;
     const transactions = [];
     let totalRevenue = 0, mpesaTotal = 0, cashTotal = 0;
     let paidTransactions = 0;
@@ -1671,7 +1681,7 @@ app.post('/api/report', verifyToken, requireAdmin, async (req, res) => {
     };
     const revenueBreakdown = Object.create(null);
 
-    snapshot.forEach(doc => {
+    reportDocs.forEach(doc => {
       const d = doc.data();
       transactions.push({ id: doc.id, ...d });
 
@@ -2068,7 +2078,7 @@ app.post('/api/sync-offline', cashLimiter, verifyToken, requireOfficer, async (r
         const offlineTransaction = {
           amount: tx.amount,
           plate: tx.plate,
-          ward: officerData.constituencyName,
+          ward: officerData.wardName || '',
           constituencyId: officerData.constituencyId,
           constituencyName: officerData.constituencyName,
           wardId: officerData.wardId,

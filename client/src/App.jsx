@@ -711,7 +711,7 @@ function Dashboard() {
                   </div>
                   <div className="activity-person">
                     <strong>{officer.username}</strong>
-                    <span><MapPin size={12} /> {officer.ward}</span>
+                    <span><MapPin size={12} /> {officer.wardName || officer.ward}</span>
                   </div>
                   <div className="activity-value">
                     <strong>{formatKES(officer.total)}</strong>
@@ -817,7 +817,7 @@ function OfficersPage() {
       officer.username,
       officer.name,
       officer.email,
-      officer.ward,
+      officer.wardName || officer.ward,
       officer.status,
     ].some((value) => String(value || '').toLowerCase().includes(term))
   })
@@ -915,7 +915,7 @@ function OfficersPage() {
                         </div>
                       </div>
                     </td>
-                    <td>{officer.ward || 'Unassigned'}</td>
+                    <td>{officer.wardName || officer.ward || 'Unassigned'}</td>
                     <td>
                       <span className={`officer-status ${status === 'online' ? 'is-online' : status === 'offline' ? 'is-offline' : 'is-unknown'}`}>
                         <span />
@@ -1559,7 +1559,7 @@ function ReportsPage() {
   }, [])
 
   const wards = [...new Set(
-    officers.map((officer) => String(officer.ward || '').trim()).filter(Boolean)
+    officers.map((officer) => String(officer.wardName || officer.ward || '').trim()).filter(Boolean)
   )].sort()
 
   async function generateReport(event) {
@@ -1619,7 +1619,7 @@ function ReportsPage() {
       item.receipt,
       item.officerUsername,
       item.revenueType,
-      item.ward,
+      item.wardName || item.ward,
       item.paymentMethod,
       item.amount,
       item.status,
@@ -1898,7 +1898,7 @@ function ReportsPage() {
                             <span>{item.revenueSubType || 'Unspecified'}</span>
                           </div>
                         </td>
-                        <td>{item.ward || '—'}</td>
+                        <td>{item.wardName || item.ward || '—'}</td>
                         <td>
                           <span className={`payment-method ${method === 'CASH' ? 'cash-method' : ''}`}>
                             {method}
