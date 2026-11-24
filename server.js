@@ -16,6 +16,7 @@ const { createMpesaCallbackProcessor } = require('./mpesa-callback-processor');
 const { createMpesaCallbackRecovery } = require('./mpesa-callback-recovery');
 const { createAnalyticsAggregateUpdater } = require('./analytics-aggregates');
 const { createAdminStatsHandler } = require('./admin-stats-handler');
+const { serializeOfficerBroadcast } = require('./broadcast-response');
 
 const app = express();
 
@@ -1874,10 +1875,9 @@ app.get('/api/broadcasts', verifyToken, requireOfficer, async (req, res) => {
       .limit(100)
       .get();
 
-    const broadcasts = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
+    const broadcasts = snapshot.docs.map(doc =>
+      serializeOfficerBroadcast(doc, req.user.uid)
+    );
 
     res.json({ success: true, broadcasts });
   } catch (error) {

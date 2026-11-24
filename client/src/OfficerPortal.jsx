@@ -60,7 +60,7 @@ export default function OfficerPortal({ profile }) {
         }
 
         const unread = (result.broadcasts || [])
-          .find(item => !(item.readBy || []).includes(user.uid))
+          .find(item => !item.read)
 
         setBroadcast(unread || null)
       } catch (error) {
@@ -185,9 +185,12 @@ export default function OfficerPortal({ profile }) {
 
   async function markBroadcastRead() {
     if (!broadcast) return
-    try { await request('/api/broadcast/' + encodeURIComponent(broadcast.id) + '/read', {}) }
-    catch { setStatus({ type: 'error', message: 'Could not mark the announcement as read.' }) }
-    setBroadcast(null)
+    try {
+      await request('/api/broadcast/' + encodeURIComponent(broadcast.id) + '/read', {})
+      setBroadcast(null)
+    } catch {
+      setStatus({ type: 'error', message: 'Could not mark the announcement as read. Please try again.' })
+    }
   }
 
   async function saveProfile(event) {
