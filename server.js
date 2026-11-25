@@ -18,6 +18,7 @@ const { createAnalyticsAggregateUpdater } = require('./analytics-aggregates');
 const { createAdminStatsHandler } = require('./admin-stats-handler');
 const { serializeOfficerBroadcast } = require('./broadcast-response');
 const { mergeWardReportDocs } = require('./transaction-ward');
+const { createMpesaPaymentIntents } = require('./mpesa-payment-intents');
 
 const app = express();
 
@@ -81,6 +82,10 @@ admin.initializeApp({
   projectId: serviceAccount.project_id
 });
 const db   = getFirestore();
+const {
+  reserveMpesaIntent,
+  claimMpesaSubmission
+} = createMpesaPaymentIntents({ db, FieldValue });
 const auth = getAuth();
 const applyAnalyticsAggregates = createAnalyticsAggregateUpdater({
   db,
@@ -127,107 +132,6 @@ function markRequest(key) {
 // ============== PENDING TRANSACTIONS ==============
 
 const pendingTransactions = {};
-
-// Durable, officer-bound M-PESA request reservation.
-async function reserveMpesaIntent({
-  uid,
-  idempotencyKey,
-  phone,
-  amount,
-  plate,
-  revenueType,
-  revenueSubType
-}) {
-  const intentId = crypto.createHash('sha256')
-    .update(`${uid}:mpesa:${idempotencyKey}`)
-    .digest('hex');
-
-  const ref = db.collection('payment_intents').doc(intentId);
-
-  const requestData = {
-    createdBy: uid,
-    phone,
-    amount,
-    plate,
-    revenueType,
-    revenueSubType
-  };
-
-  return db.runTransaction(async transaction => {
-    const snap = await transaction.get(ref);
-
-    if (snap.exists) {
-      const saved = snap.data();
-
-      const sameRequest =
-        saved.createdBy === uid &&
-        saved.phone === phone &&
-        saved.amount === amount &&
-        saved.plate === plate &&
-        saved.revenueType === revenueType &&
-        saved.revenueSubType === revenueSubType;
-
-      if (!sameRequest) {
-        const conflict = new Error(
-          'This payment identifier belongs to a different request.'
-        );
-        conflict.statusCode = 409;
-        throw conflict;
-      }
-
-      return {
-        created: false,
-        ref,
-        intent: saved
-      };
-    }
-
-    const intent = {
-      ...requestData,
-      status: 'RESERVED',
-      createdAt: FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp()
-    };
-
-    transaction.create(ref, intent);
-
-    return {
-      created: true,
-      ref,
-      intent
-    };
-  });
-}
-
-
-async function claimMpesaSubmission(ref) {
-  return db.runTransaction(async transaction => {
-    const snap = await transaction.get(ref);
-
-    if (!snap.exists) {
-      return { claimed: false, state: 'NOT_FOUND' };
-    }
-
-    const intent = snap.data();
-    const state = String(intent.status || '').toUpperCase();
-
-    if (state !== 'RESERVED') {
-      return {
-        claimed: false,
-        state,
-        checkoutId: intent.checkoutRequestId || null
-      };
-    }
-
-    transaction.update(ref, {
-      status: 'SUBMITTING',
-      submissionStartedAt: FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp()
-    });
-
-    return { claimed: true, state: 'SUBMITTING' };
-  });
-}
 
 // ============== AUTH MIDDLEWARE ==============
 async function verifyToken(req, res, next) {
@@ -405,6 +309,7 @@ app.post('/api/offline', verifyToken, async (req, res) => {
 // ── STK Push ──────────────────────────────────────────────
 app.post('/api/pay', paymentLimiter, verifyToken, requireOfficer, async (req, res) => {
   let intentRef = null;
+  let attemptRef = null;
   let submissionClaimed = false;
   let providerCheckoutId = null;
   let providerMerchantId = null;
@@ -523,7 +428,11 @@ app.post('/api/pay', paymentLimiter, verifyToken, requireOfficer, async (req, re
       `${MPESA_SHORTCODE}${MPESA_PASSKEY}${ts}`
     ).toString('base64');
 
-    const claim = await claimMpesaSubmission(intentRef);
+    const claim = await claimMpesaSubmission(intentRef, {
+      idempotencyKey,
+      accountReference,
+      mpesaTimestamp: ts
+    });
 
     if (!claim.claimed) {
       if (claim.state === 'PENDING' && claim.checkoutId) {
@@ -546,6 +455,7 @@ app.post('/api/pay', paymentLimiter, verifyToken, requireOfficer, async (req, re
     }
 
     submissionClaimed = true;
+    attemptRef = claim.attemptRef;
 
     const stkRes = await axios.post(
       `${MPESA_BASE_URL}/mpesa/stkpush/v1/processrequest`,
@@ -610,6 +520,7 @@ app.post('/api/pay', paymentLimiter, verifyToken, requireOfficer, async (req, re
     await db.runTransaction(async transaction => {
       const intentSnap = await transaction.get(intentRef);
       const txSnap = await transaction.get(txRef);
+      const attemptSnap = await transaction.get(attemptRef);
 
       if (!intentSnap.exists) {
         throw new Error('Payment intent disappeared before transaction linking.');
@@ -624,6 +535,15 @@ app.post('/api/pay', paymentLimiter, verifyToken, requireOfficer, async (req, re
         throw new Error('Payment intent is not in the expected submission state.');
       }
 
+      if (
+        !attemptSnap.exists ||
+        attemptSnap.data().status !== 'SUBMITTING' ||
+        attemptSnap.data().intentId !== intentRef.id ||
+        intentSnap.data().activeAttemptId !== attemptRef.id
+      ) {
+        throw new Error('Payment attempt is not in the expected submission state.');
+      }
+
       transaction.create(txRef, tx);
       await applyAnalyticsAggregates(transaction, {
       current: tx,
@@ -635,6 +555,14 @@ transaction.update(intentRef, {
         merchantRequestId: providerMerchantId,
         mpesaTimestamp: ts,
         submittedAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp()
+      });
+
+      transaction.update(attemptRef, {
+        status: 'LINKED',
+        checkoutRequestId: providerCheckoutId,
+        merchantRequestId: providerMerchantId,
+        linkedAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp()
       });
     });
@@ -659,18 +587,86 @@ transaction.update(intentRef, {
       checkoutId: providerCheckoutId
     });
   } catch (error) {
-    console.log('STK ERROR=', error.response?.data || error.message);
+    const errorCode = ({
+      ECONNABORTED: 'REQUEST_TIMEOUT',
+      ETIMEDOUT: 'REQUEST_TIMEOUT',
+      ECONNRESET: 'CONNECTION_RESET',
+      ENOTFOUND: 'NETWORK_DNS_ERROR',
+      ECONNREFUSED: 'CONNECTION_REFUSED',
+      ERR_BAD_RESPONSE: 'PROVIDER_BAD_RESPONSE'
+    })[error.code] || (
+      error.response?.status ? 'PROVIDER_HTTP_ERROR' : 'REQUEST_ERROR'
+    );
 
-    if (submissionClaimed && intentRef) {
-      await intentRef.update({
-        status: 'SUBMISSION_UNKNOWN',
-        checkoutRequestId: providerCheckoutId,
-        merchantRequestId: providerMerchantId,
-        lastSubmissionErrorCode: error.code || 'REQUEST_ERROR',
-        updatedAt: FieldValue.serverTimestamp()
+    console.warn('M-PESA STK submission error:', {
+      category: errorCode,
+      httpStatus: Number.isInteger(error.response?.status)
+        ? error.response.status
+        : null
+    });
+
+    if (submissionClaimed && intentRef && attemptRef) {
+
+      const recovery = await db.runTransaction(async transaction => {
+        const intentSnap = await transaction.get(intentRef);
+        const attemptSnap = await transaction.get(attemptRef);
+
+        if (!intentSnap.exists || !attemptSnap.exists) {
+          return { updated: false };
+        }
+
+        const currentIntent = intentSnap.data();
+        const currentAttempt = attemptSnap.data();
+
+        if (
+          currentIntent.status !== 'SUBMITTING' ||
+          currentAttempt.status !== 'SUBMITTING' ||
+          currentIntent.activeAttemptId !== attemptRef.id
+        ) {
+          return {
+            updated: false,
+            intentStatus: currentIntent.status,
+            attemptStatus: currentAttempt.status
+          };
+        }
+
+        if (intentSnap.exists) {
+          transaction.update(intentRef, {
+            status: 'SUBMISSION_UNKNOWN',
+            checkoutRequestId: providerCheckoutId,
+            merchantRequestId: providerMerchantId,
+            lastSubmissionErrorCode: errorCode,
+            updatedAt: FieldValue.serverTimestamp()
+          });
+        }
+
+        if (attemptSnap.exists) {
+          transaction.update(attemptRef, {
+            status: 'SUBMISSION_UNKNOWN',
+            checkoutRequestId: providerCheckoutId,
+            merchantRequestId: providerMerchantId,
+            errorCode,
+            updatedAt: FieldValue.serverTimestamp()
+          });
+        }
+
+        return { updated: true };
       }).catch(updateError => {
-        console.error('Could not mark M-PESA intent as uncertain:', updateError.message);
+        console.error('Could not mark M-PESA intent and attempt as uncertain:', updateError.message);
+        return null;
       });
+
+      if (
+        recovery &&
+        recovery.intentStatus === 'PENDING' &&
+        recovery.attemptStatus === 'LINKED'
+      ) {
+        return res.json({
+          success: true,
+          message: 'STK Push Sent',
+          checkoutId: providerCheckoutId
+        });
+      }
 
       return res.status(202).json({
         success: false,
