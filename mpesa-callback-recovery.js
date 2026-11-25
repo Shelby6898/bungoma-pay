@@ -122,11 +122,7 @@ function createMpesaCallbackRecovery({
     try {
       await processMpesaCallback(ref.id);
     } catch (error) {
-      console.error(
-        'M-PESA callback recovery attempt failed:',
-        ref.id,
-        error.message
-      );
+      console.error('M-PESA callback recovery attempt failed; attempt:', attemptCount);
     }
 
     await finish(ref, attemptCount);
@@ -174,7 +170,7 @@ function createMpesaCallbackRecovery({
 
       activeCycle = runOnce()
         .catch(error => {
-          console.error('M-PESA recovery worker cycle failed:', error.message);
+          console.error('M-PESA recovery worker cycle failed');
         })
         .finally(() => {
           activeCycle = null;

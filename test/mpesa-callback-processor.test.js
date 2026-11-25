@@ -13,7 +13,8 @@ function createHarness({
   transaction = null,
   queryError = null,
   queryResponse = {},
-  applyAnalyticsAggregates = null
+  applyAnalyticsAggregates = null,
+  onQuery = null
 } = {}) {
   const store = {
     mpesa_callback_inbox: {},
@@ -92,6 +93,7 @@ function createHarness({
   const queryMpesaStk = async () => {
     queryCalls++;
     if (queryError) throw queryError;
+    if (onQuery) await onQuery(store);
 
     return {
       ResponseCode: '0',
@@ -329,6 +331,37 @@ test('moves a merchant mismatch to REVIEW', async () => {
 
   assert.equal(h.store.transactions[CHECKOUT].status, 'PENDING');
   assert.equal(h.store.mpesa_callback_inbox[CHECKOUT].status, 'REVIEW');
+});
+
+test('does not mark payment PAID when inbox becomes CONFLICT during provider verification', async () => {
+  const h = createHarness({
+    inbox: validInbox(),
+    transaction: validTransaction(),
+    onQuery: async store => {
+      store.mpesa_callback_inbox[CHECKOUT].status = 'CONFLICT';
+    }
+  });
+
+  assert.deepEqual(await h.process(CHECKOUT), { state: 'CONFLICT' });
+  assert.equal(h.store.transactions[CHECKOUT].status, 'PENDING');
+  assert.equal(h.store.mpesa_callback_inbox[CHECKOUT].status, 'CONFLICT');
+  assert.equal(h.pendingTransactions[CHECKOUT].test, true);
+  assert.equal(h.queryCalls, 1);
+});
+
+test('does not overwrite CONFLICT with REVIEW when verification fails concurrently', async () => {
+  const h = createHarness({
+    inbox: validInbox(),
+    transaction: validTransaction(),
+    queryResponse: { ResponseCode: '1' },
+    onQuery: async store => {
+      store.mpesa_callback_inbox[CHECKOUT].status = 'CONFLICT';
+    }
+  });
+
+  assert.deepEqual(await h.process(CHECKOUT), { state: 'CONFLICT' });
+  assert.equal(h.store.transactions[CHECKOUT].status, 'PENDING');
+  assert.equal(h.store.mpesa_callback_inbox[CHECKOUT].status, 'CONFLICT');
 });
 
 test('keeps the callback RECEIVED if the provider query fails', async () => {

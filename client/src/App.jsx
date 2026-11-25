@@ -711,7 +711,7 @@ function Dashboard() {
                   </div>
                   <div className="activity-person">
                     <strong>{officer.username}</strong>
-                    <span><MapPin size={12} /> {officer.ward}</span>
+                    <span><MapPin size={12} /> {officer.wardName || officer.ward}</span>
                   </div>
                   <div className="activity-value">
                     <strong>{formatKES(officer.total)}</strong>
@@ -817,7 +817,7 @@ function OfficersPage() {
       officer.username,
       officer.name,
       officer.email,
-      officer.ward,
+      officer.wardName || officer.ward,
       officer.status,
     ].some((value) => String(value || '').toLowerCase().includes(term))
   })
@@ -915,7 +915,7 @@ function OfficersPage() {
                         </div>
                       </div>
                     </td>
-                    <td>{officer.ward || 'Unassigned'}</td>
+                    <td>{officer.wardName || officer.ward || 'Unassigned'}</td>
                     <td>
                       <span className={`officer-status ${status === 'online' ? 'is-online' : status === 'offline' ? 'is-offline' : 'is-unknown'}`}>
                         <span />
@@ -1158,11 +1158,85 @@ function TransactionsPage() {
 
 
 
+
 function BroadcastsPage() {
   const [message, setMessage] = useState('')
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [officers, setOfficers] = useState([])
+  const [targetLoading, setTargetLoading] = useState(true)
+  const [targetError, setTargetError] = useState('')
+  const [locations, setLocations] = useState([])
+  const [locationLoading, setLocationLoading] = useState(true)
+  const [locationError, setLocationError] = useState('')
+  const [targetScope, setTargetScope] = useState('all')
+  const [targetConstituencyId, setTargetConstituencyId] = useState('')
+  const [targetWardId, setTargetWardId] = useState('')
+  const [targetOfficerUid, setTargetOfficerUid] = useState('')
+
+  useEffect(() => {
+    let active = true
+
+    async function loadOfficers() {
+      try {
+        const user = auth.currentUser
+        if (!user) throw new Error('Administrator session unavailable.')
+
+        const token = await user.getIdToken()
+        const response = await fetch('/api/officers', {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        const result = await response.json()
+
+        if (!response.ok || !result.success || !Array.isArray(result.officers)) {
+          throw new Error(result.message || result.error || 'Could not load officers.')
+        }
+
+        if (active) setOfficers(result.officers)
+      } catch (err) {
+        if (active) setTargetError(err.message || 'Could not load officers.')
+      } finally {
+        if (active) setTargetLoading(false)
+      }
+    }
+
+    async function loadLocations() {
+      try {
+        const user = auth.currentUser
+        if (!user) throw new Error('Administrator session unavailable.')
+
+        const token = await user.getIdToken()
+        const response = await fetch('/api/locations', {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        const result = await response.json()
+
+        if (!response.ok || !result.success || !Array.isArray(result.constituencies)) {
+          throw new Error(result.message || result.error || 'Could not load county locations.')
+        }
+
+        if (active) setLocations(result.constituencies)
+      } catch (err) {
+        if (active) setLocationError(err.message || 'Could not load county locations.')
+      } finally {
+        if (active) setLocationLoading(false)
+      }
+    }
+
+    loadOfficers()
+    loadLocations()
+
+    return () => { active = false }
+  }, [])
+
+  const constituencies = locations
+
+  const selectedConstituency = constituencies.find(
+    item => item.id === targetConstituencyId
+  )
+
+  const wards = selectedConstituency?.wards || []
 
   async function sendBroadcast(event) {
     event.preventDefault()
@@ -1171,6 +1245,45 @@ function BroadcastsPage() {
     if (!text) {
       setError('Please enter a message before sending.')
       return
+    }
+
+    if (targetScope === 'officer' && targetLoading) {
+      setError('Please wait for officer targeting options to load.')
+      return
+    }
+
+    if ((targetScope === 'constituency' || targetScope === 'ward') && locationLoading) {
+      setError('Please wait for county locations to load.')
+      return
+    }
+
+    if ((targetScope === 'constituency' || targetScope === 'ward') && locationError) {
+      setError(locationError)
+      return
+    }
+
+    if (targetScope === 'constituency' && !targetConstituencyId) {
+      setError('Please select a constituency.')
+      return
+    }
+
+    if (targetScope === 'ward' && (!targetConstituencyId || !targetWardId)) {
+      setError('Please select a constituency and ward.')
+      return
+    }
+
+    if (targetScope === 'officer' && !targetOfficerUid) {
+      setError('Please select an officer.')
+      return
+    }
+
+    const target = {
+      scope: targetScope,
+      ...(targetScope === 'constituency' || targetScope === 'ward'
+        ? { constituencyId: targetConstituencyId }
+        : {}),
+      ...(targetScope === 'ward' ? { wardId: targetWardId } : {}),
+      ...(targetScope === 'officer' ? { officerUid: targetOfficerUid } : {}),
     }
 
     setSending(true)
@@ -1188,7 +1301,7 @@ function BroadcastsPage() {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ message: text }),
+        body: JSON.stringify({ message: text, target }),
       })
 
       const result = await response.json()
@@ -1206,6 +1319,13 @@ function BroadcastsPage() {
     }
   }
 
+  const sendLabel = {
+    all: 'Send to all officers',
+    constituency: 'Send to constituency',
+    ward: 'Send to ward',
+    officer: 'Send to selected officer',
+  }[targetScope]
+
   return (
     <section className="broadcasts-page">
       <div className="page-heading">
@@ -1220,7 +1340,7 @@ function BroadcastsPage() {
         <div className="panel-heading">
           <div>
             <h2>Compose announcement</h2>
-            <p>Your message will be delivered to all field officers.</p>
+            <p>Choose who should receive this announcement.</p>
           </div>
           <div className="broadcast-heading-icon">
             <Megaphone size={19} />
@@ -1228,28 +1348,134 @@ function BroadcastsPage() {
         </div>
 
         <form onSubmit={sendBroadcast} className="broadcast-form">
+          <label htmlFor="broadcast-target">Recipients</label>
+          <select
+            id="broadcast-target"
+            value={targetScope}
+            onChange={event => {
+              setTargetScope(event.target.value)
+              setTargetConstituencyId('')
+              setTargetWardId('')
+              setTargetOfficerUid('')
+              setError('')
+              setSuccess('')
+            }}
+          >
+            <option value="all">All officers</option>
+            <option value="constituency">A constituency</option>
+            <option value="ward">A specific ward</option>
+            <option value="officer">An individual officer</option>
+          </select>
+
+          {targetScope === 'officer' && targetLoading && (
+            <p className="broadcast-target-hint">Loading officers...</p>
+          )}
+
+          {(targetScope === 'constituency' || targetScope === 'ward') && locationLoading && (
+            <p className="broadcast-target-hint">Loading county constituencies and wards...</p>
+          )}
+
+          {targetScope === 'officer' && targetError && (
+            <p className="broadcast-target-error" role="alert">{targetError}</p>
+          )}
+
+          {(targetScope === 'constituency' || targetScope === 'ward') && locationError && (
+            <p className="broadcast-target-error" role="alert">{locationError}</p>
+          )}
+
+          {(targetScope === 'constituency' || targetScope === 'ward') && (
+            <>
+              <label htmlFor="broadcast-constituency">Constituency</label>
+              <select
+                id="broadcast-constituency"
+                value={targetConstituencyId}
+                onChange={event => {
+                  setTargetConstituencyId(event.target.value)
+                  setTargetWardId('')
+                  setError('')
+                }}
+                required
+                disabled={locationLoading || Boolean(locationError) || constituencies.length === 0}
+              >
+                <option value="">Select constituency</option>
+                {constituencies.map(item => (
+                  <option key={item.id} value={item.id}>{item.name}</option>
+                ))}
+              </select>
+            </>
+          )}
+
+          {targetScope === 'ward' && (
+            <>
+              <label htmlFor="broadcast-ward">Ward</label>
+              <select
+                id="broadcast-ward"
+                value={targetWardId}
+                onChange={event => setTargetWardId(event.target.value)}
+                required
+                disabled={!targetConstituencyId || locationLoading || Boolean(locationError) || wards.length === 0}
+              >
+                <option value="">Select ward</option>
+                {wards.map(item => (
+                  <option key={item.id} value={item.id}>{item.name}</option>
+                ))}
+              </select>
+            </>
+          )}
+
+          {targetScope === 'officer' && (
+            <>
+              <label htmlFor="broadcast-officer">Officer</label>
+              <select
+                id="broadcast-officer"
+                value={targetOfficerUid}
+                onChange={event => setTargetOfficerUid(event.target.value)}
+                required
+                disabled={targetLoading || officers.length === 0}
+              >
+                <option value="">Select officer</option>
+                {officers.map(officer => (
+                  <option key={officer.uid} value={officer.uid}>
+                    {officer.username || officer.name || officer.email || officer.uid}
+                    {' — '}
+                    {officer.wardName || officer.ward || 'Ward not set'}
+                  </option>
+                ))}
+              </select>
+            </>
+          )}
+
           <label htmlFor="broadcast-message">Message</label>
           <textarea
             id="broadcast-message"
             value={message}
-            onChange={(event) => {
+            onChange={event => {
               setMessage(event.target.value)
               setError('')
               setSuccess('')
             }}
             placeholder="Write an announcement for field officers..."
             rows={7}
+            maxLength={2000}
             required
           />
+
           <div className="broadcast-form-footer">
-            <span>{message.length} characters</span>
+            <span>{message.length}/2000 characters</span>
             <button
               type="submit"
               className="button button-primary"
-              disabled={sending || !message.trim()}
+              disabled={
+                sending ||
+                !message.trim() ||
+                (targetScope === 'officer' && targetLoading) ||
+                (targetScope === 'officer' && Boolean(targetError)) ||
+                ((targetScope === 'constituency' || targetScope === 'ward') &&
+                  (locationLoading || Boolean(locationError)))
+              }
             >
               <Megaphone size={16} />
-              {sending ? 'Sending...' : 'Send to all officers'}
+              {sending ? 'Sending...' : sendLabel}
             </button>
           </div>
         </form>
@@ -1273,7 +1499,7 @@ function BroadcastsPage() {
         <Megaphone size={17} />
         <div>
           <strong>How delivery works</strong>
-          <p>Officers receive new announcements through the existing live broadcast listener when they are online.</p>
+          <p>Officers receive announcements addressed to them while online. The portal checks for new announcements every 30 seconds.</p>
         </div>
       </div>
     </section>
@@ -1333,7 +1559,7 @@ function ReportsPage() {
   }, [])
 
   const wards = [...new Set(
-    officers.map((officer) => String(officer.ward || '').trim()).filter(Boolean)
+    officers.map((officer) => String(officer.wardName || officer.ward || '').trim()).filter(Boolean)
   )].sort()
 
   async function generateReport(event) {
@@ -1393,7 +1619,7 @@ function ReportsPage() {
       item.receipt,
       item.officerUsername,
       item.revenueType,
-      item.ward,
+      item.wardName || item.ward,
       item.paymentMethod,
       item.amount,
       item.status,
@@ -1672,7 +1898,7 @@ function ReportsPage() {
                             <span>{item.revenueSubType || 'Unspecified'}</span>
                           </div>
                         </td>
-                        <td>{item.ward || '—'}</td>
+                        <td>{item.wardName || item.ward || '—'}</td>
                         <td>
                           <span className={`payment-method ${method === 'CASH' ? 'cash-method' : ''}`}>
                             {method}

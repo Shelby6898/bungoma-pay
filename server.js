@@ -16,6 +16,10 @@ const { createMpesaCallbackProcessor } = require('./mpesa-callback-processor');
 const { createMpesaCallbackRecovery } = require('./mpesa-callback-recovery');
 const { createAnalyticsAggregateUpdater } = require('./analytics-aggregates');
 const { createAdminStatsHandler } = require('./admin-stats-handler');
+const { serializeOfficerBroadcast } = require('./broadcast-response');
+const { mergeWardReportDocs } = require('./transaction-ward');
+const { createMpesaPaymentIntents } = require('./mpesa-payment-intents');
+const { createApiNotFoundHandler, createHttpErrorHandler } = require('./http-error-handlers');
 
 const app = express();
 
@@ -79,6 +83,10 @@ admin.initializeApp({
   projectId: serviceAccount.project_id
 });
 const db   = getFirestore();
+const {
+  reserveMpesaIntent,
+  claimMpesaSubmission
+} = createMpesaPaymentIntents({ db, FieldValue });
 const auth = getAuth();
 const applyAnalyticsAggregates = createAnalyticsAggregateUpdater({
   db,
@@ -93,7 +101,7 @@ try {
     username: process.env.AT_USERNAME || 'sandbox'
   });
 } catch(e) {
-  console.log('AT init skipped:', e.message);
+  console.warn("Africa's Talking SMS service initialization skipped.");
 }
 
 // ============== ENV ==============
@@ -125,107 +133,6 @@ function markRequest(key) {
 // ============== PENDING TRANSACTIONS ==============
 
 const pendingTransactions = {};
-
-// Durable, officer-bound M-PESA request reservation.
-async function reserveMpesaIntent({
-  uid,
-  idempotencyKey,
-  phone,
-  amount,
-  plate,
-  revenueType,
-  revenueSubType
-}) {
-  const intentId = crypto.createHash('sha256')
-    .update(`${uid}:mpesa:${idempotencyKey}`)
-    .digest('hex');
-
-  const ref = db.collection('payment_intents').doc(intentId);
-
-  const requestData = {
-    createdBy: uid,
-    phone,
-    amount,
-    plate,
-    revenueType,
-    revenueSubType
-  };
-
-  return db.runTransaction(async transaction => {
-    const snap = await transaction.get(ref);
-
-    if (snap.exists) {
-      const saved = snap.data();
-
-      const sameRequest =
-        saved.createdBy === uid &&
-        saved.phone === phone &&
-        saved.amount === amount &&
-        saved.plate === plate &&
-        saved.revenueType === revenueType &&
-        saved.revenueSubType === revenueSubType;
-
-      if (!sameRequest) {
-        const conflict = new Error(
-          'This payment identifier belongs to a different request.'
-        );
-        conflict.statusCode = 409;
-        throw conflict;
-      }
-
-      return {
-        created: false,
-        ref,
-        intent: saved
-      };
-    }
-
-    const intent = {
-      ...requestData,
-      status: 'RESERVED',
-      createdAt: FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp()
-    };
-
-    transaction.create(ref, intent);
-
-    return {
-      created: true,
-      ref,
-      intent
-    };
-  });
-}
-
-
-async function claimMpesaSubmission(ref) {
-  return db.runTransaction(async transaction => {
-    const snap = await transaction.get(ref);
-
-    if (!snap.exists) {
-      return { claimed: false, state: 'NOT_FOUND' };
-    }
-
-    const intent = snap.data();
-    const state = String(intent.status || '').toUpperCase();
-
-    if (state !== 'RESERVED') {
-      return {
-        claimed: false,
-        state,
-        checkoutId: intent.checkoutRequestId || null
-      };
-    }
-
-    transaction.update(ref, {
-      status: 'SUBMITTING',
-      submissionStartedAt: FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp()
-    });
-
-    return { claimed: true, state: 'SUBMITTING' };
-  });
-}
 
 // ============== AUTH MIDDLEWARE ==============
 async function verifyToken(req, res, next) {
@@ -289,7 +196,7 @@ async function requireOfficer(req, res, next) {
     req.userData = officerData;
     next();
   } catch (error) {
-    console.error('Officer authorization error:', error.message);
+    console.error('Officer authorization check failed.');
     return res.status(500).json({
       success: false,
       message: 'Could not verify officer access'
@@ -365,7 +272,7 @@ async function sendReceiptSMS(phone, amount, receipt, plate) {
   try {
     await at.SMS.send({ to: [p], message: msg });
   } catch (e) {
-    console.log('SMS ERROR=', e.message);
+    console.error('Receipt SMS delivery failed.');
   }
 }
 async function getOfficerData(uid) {
@@ -388,7 +295,7 @@ app.get('/api/me', verifyToken, async (req, res) => {
 app.post('/api/heartbeat', verifyToken, async (req, res) => {
   await db.collection('users').doc(req.user.uid).update({
     status: 'online', lastSeen: FieldValue.serverTimestamp()
-  }).catch(() => {});
+  });
   res.json({ success: true });
 });
 
@@ -396,13 +303,14 @@ app.post('/api/heartbeat', verifyToken, async (req, res) => {
 app.post('/api/offline', verifyToken, async (req, res) => {
   await db.collection('users').doc(req.user.uid).update({
     status: 'offline', lastSeen: FieldValue.serverTimestamp()
-  }).catch(() => {});
+  });
   res.json({ success: true });
 });
 
 // ── STK Push ──────────────────────────────────────────────
 app.post('/api/pay', paymentLimiter, verifyToken, requireOfficer, async (req, res) => {
   let intentRef = null;
+  let attemptRef = null;
   let submissionClaimed = false;
   let providerCheckoutId = null;
   let providerMerchantId = null;
@@ -521,7 +429,11 @@ app.post('/api/pay', paymentLimiter, verifyToken, requireOfficer, async (req, re
       `${MPESA_SHORTCODE}${MPESA_PASSKEY}${ts}`
     ).toString('base64');
 
-    const claim = await claimMpesaSubmission(intentRef);
+    const claim = await claimMpesaSubmission(intentRef, {
+      idempotencyKey,
+      accountReference,
+      mpesaTimestamp: ts
+    });
 
     if (!claim.claimed) {
       if (claim.state === 'PENDING' && claim.checkoutId) {
@@ -544,6 +456,7 @@ app.post('/api/pay', paymentLimiter, verifyToken, requireOfficer, async (req, re
     }
 
     submissionClaimed = true;
+    attemptRef = claim.attemptRef;
 
     const stkRes = await axios.post(
       `${MPESA_BASE_URL}/mpesa/stkpush/v1/processrequest`,
@@ -589,7 +502,7 @@ app.post('/api/pay', paymentLimiter, verifyToken, requireOfficer, async (req, re
       phone: fp,
       revenueType,
       revenueSubType,
-      ward: officerData.constituencyName || '',
+      ward: officerData.wardName || '',
       constituencyId: officerData.constituencyId || '',
       constituencyName: officerData.constituencyName || '',
       wardId: officerData.wardId || '',
@@ -608,6 +521,7 @@ app.post('/api/pay', paymentLimiter, verifyToken, requireOfficer, async (req, re
     await db.runTransaction(async transaction => {
       const intentSnap = await transaction.get(intentRef);
       const txSnap = await transaction.get(txRef);
+      const attemptSnap = await transaction.get(attemptRef);
 
       if (!intentSnap.exists) {
         throw new Error('Payment intent disappeared before transaction linking.');
@@ -620,6 +534,15 @@ app.post('/api/pay', paymentLimiter, verifyToken, requireOfficer, async (req, re
       const currentIntent = intentSnap.data();
       if (currentIntent.status !== 'SUBMITTING') {
         throw new Error('Payment intent is not in the expected submission state.');
+      }
+
+      if (
+        !attemptSnap.exists ||
+        attemptSnap.data().status !== 'SUBMITTING' ||
+        attemptSnap.data().intentId !== intentRef.id ||
+        intentSnap.data().activeAttemptId !== attemptRef.id
+      ) {
+        throw new Error('Payment attempt is not in the expected submission state.');
       }
 
       transaction.create(txRef, tx);
@@ -635,16 +558,20 @@ transaction.update(intentRef, {
         submittedAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp()
       });
+
+      transaction.update(attemptRef, {
+        status: 'LINKED',
+        checkoutRequestId: providerCheckoutId,
+        merchantRequestId: providerMerchantId,
+        linkedAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp()
+      });
     });
 
     pendingTransactions[providerCheckoutId] = tx;
 
     await processMpesaCallback(providerCheckoutId).catch(error => {
-      console.error(
-        'Retained M-PESA callback replay deferred:',
-        providerCheckoutId,
-        error.message
-      );
+      console.error('Retained M-PESA callback replay deferred');
     });
 
     console.log(
@@ -657,18 +584,86 @@ transaction.update(intentRef, {
       checkoutId: providerCheckoutId
     });
   } catch (error) {
-    console.log('STK ERROR=', error.response?.data || error.message);
+    const errorCode = ({
+      ECONNABORTED: 'REQUEST_TIMEOUT',
+      ETIMEDOUT: 'REQUEST_TIMEOUT',
+      ECONNRESET: 'CONNECTION_RESET',
+      ENOTFOUND: 'NETWORK_DNS_ERROR',
+      ECONNREFUSED: 'CONNECTION_REFUSED',
+      ERR_BAD_RESPONSE: 'PROVIDER_BAD_RESPONSE'
+    })[error.code] || (
+      error.response?.status ? 'PROVIDER_HTTP_ERROR' : 'REQUEST_ERROR'
+    );
 
-    if (submissionClaimed && intentRef) {
-      await intentRef.update({
-        status: 'SUBMISSION_UNKNOWN',
-        checkoutRequestId: providerCheckoutId,
-        merchantRequestId: providerMerchantId,
-        lastSubmissionErrorCode: error.code || 'REQUEST_ERROR',
-        updatedAt: FieldValue.serverTimestamp()
+    console.warn('M-PESA STK submission error:', {
+      category: errorCode,
+      httpStatus: Number.isInteger(error.response?.status)
+        ? error.response.status
+        : null
+    });
+
+    if (submissionClaimed && intentRef && attemptRef) {
+
+      const recovery = await db.runTransaction(async transaction => {
+        const intentSnap = await transaction.get(intentRef);
+        const attemptSnap = await transaction.get(attemptRef);
+
+        if (!intentSnap.exists || !attemptSnap.exists) {
+          return { updated: false };
+        }
+
+        const currentIntent = intentSnap.data();
+        const currentAttempt = attemptSnap.data();
+
+        if (
+          currentIntent.status !== 'SUBMITTING' ||
+          currentAttempt.status !== 'SUBMITTING' ||
+          currentIntent.activeAttemptId !== attemptRef.id
+        ) {
+          return {
+            updated: false,
+            intentStatus: currentIntent.status,
+            attemptStatus: currentAttempt.status
+          };
+        }
+
+        if (intentSnap.exists) {
+          transaction.update(intentRef, {
+            status: 'SUBMISSION_UNKNOWN',
+            checkoutRequestId: providerCheckoutId,
+            merchantRequestId: providerMerchantId,
+            lastSubmissionErrorCode: errorCode,
+            updatedAt: FieldValue.serverTimestamp()
+          });
+        }
+
+        if (attemptSnap.exists) {
+          transaction.update(attemptRef, {
+            status: 'SUBMISSION_UNKNOWN',
+            checkoutRequestId: providerCheckoutId,
+            merchantRequestId: providerMerchantId,
+            errorCode,
+            updatedAt: FieldValue.serverTimestamp()
+          });
+        }
+
+        return { updated: true };
       }).catch(updateError => {
-        console.error('Could not mark M-PESA intent as uncertain:', updateError.message);
+        console.error('Could not persist uncertain M-PESA submission state.');
+        return null;
       });
+
+      if (
+        recovery &&
+        recovery.intentStatus === 'PENDING' &&
+        recovery.attemptStatus === 'LINKED'
+      ) {
+        return res.json({
+          success: true,
+          message: 'STK Push Sent',
+          checkoutId: providerCheckoutId
+        });
+      }
 
       return res.status(202).json({
         success: false,
@@ -677,11 +672,9 @@ transaction.update(intentRef, {
       });
     }
 
-    return res.status(error.statusCode || 500).json({
+    return res.status(500).json({
       success: false,
-      message: error.statusCode === 409
-        ? error.message
-        : 'Could not prepare the payment request. No STK submission was attempted.'
+      message: 'Could not prepare the payment request. No STK submission was attempted.'
     });
   }
 });
@@ -780,14 +773,14 @@ app.post('/api/callback', callbackLimiter, async (req, res) => {
     callbackRetained = true;
 
     const processed = await processMpesaCallback(checkoutId);
-    console.log('M-PESA callback processing state:', checkoutId, processed.state);
+    console.log('M-PESA callback processing state:', processed.state);
 
     return res.status(200).json({
       ResultCode: 0,
       ResultDesc: 'Accepted'
     });
   } catch (error) {
-    console.log('CALLBACK ERROR=', error.message);
+    console.error('M-PESA callback handler failed; callback retained:', callbackRetained);
 
     if (!callbackRetained) {
       return res.status(500).json({
@@ -868,8 +861,8 @@ app.post('/api/cash', cashLimiter, verifyToken, requireOfficer, async (req, res)
           saved.revenueSubType === revenueSubType;
 
         if (!sameRequest) {
-          const conflict = new Error('This payment identifier belongs to a different request.');
-          conflict.statusCode = 409;
+          const conflict = new Error('Payment identifier conflict.');
+          conflict.code = 'PAYMENT_IDEMPOTENCY_CONFLICT';
           throw conflict;
         }
 
@@ -881,7 +874,7 @@ app.post('/api/cash', cashLimiter, verifyToken, requireOfficer, async (req, res)
       const cashTransaction = {
         amount: normalizedAmount,
         plate: plateValue,
-        ward: officerData.constituencyName,
+        ward: officerData.wardName || '',
         constituencyId: officerData.constituencyId,
         constituencyName: officerData.constituencyName,
         wardId: officerData.wardId,
@@ -908,11 +901,12 @@ app.post('/api/cash', cashLimiter, verifyToken, requireOfficer, async (req, res)
 
     res.json({ success: true, receipt });
   } catch (error) {
-    console.error('Cash payment error:', error.message);
-    res.status(error.statusCode || 500).json({
+    console.error('Cash payment request failed.');
+    const isConflict = error.code === 'PAYMENT_IDEMPOTENCY_CONFLICT';
+    res.status(isConflict ? 409 : 500).json({
       success: false,
-      error: error.statusCode === 409
-        ? error.message
+      error: isConflict
+        ? 'This payment identifier belongs to a different request.'
         : 'Could not record cash payment.'
     });
   }
@@ -939,7 +933,7 @@ app.get('/api/transactions', verifyToken, async (req, res) => {
     snapshot.forEach(doc => transactions.push({ id: doc.id, ...doc.data() }));
     res.json(transactions);
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Could not load transactions.' });
   }
 });
 
@@ -989,7 +983,7 @@ app.get('/api/admin/mpesa/pending', verifyToken, requireAdmin, async (req, res) 
       payments
     });
   } catch (error) {
-    console.error('Pending M-PESA list error:', error.message);
+    console.error('Pending M-PESA list request failed.');
     return res.status(500).json({
       success: false,
       error: 'Could not load pending M-PESA payments.'
@@ -1279,7 +1273,7 @@ app.post('/api/admin/mpesa/reconcile', verifyToken, requireAdmin, async (req, re
         : 'STK Query reports success, but callback payment evidence is still required. Transaction remains pending.'
     });
   } catch (error) {
-    console.error('M-PESA reconciliation error:', error.message);
+    console.error('M-PESA reconciliation request failed.');
     return res.status(502).json({
       success: false,
       error: 'Reconciliation could not be completed. Transaction was not automatically marked as paid.'
@@ -1376,7 +1370,7 @@ app.get('/api/admin/revenue-trend', verifyToken, requireAdmin, async (req, res) 
 
     res.json({ success: true, days, totalRevenue });
   } catch (error) {
-    console.error('Revenue trend error:', error);
+    console.error('Revenue trend request failed.');
     res.status(500).json({
       success: false,
       message: 'Could not load the seven-day revenue trend.'
@@ -1444,7 +1438,7 @@ app.post('/api/create-officer', verifyToken, requireAdmin, async (req, res) => {
         createdAt: FieldValue.serverTimestamp()
       });
     } catch (profileError) {
-      console.error('Officer profile creation failed after Auth account creation:', profileError.message);
+      console.error('Officer profile creation failed after Auth account creation.');
       return res.status(500).json({
         success: false,
         message: 'The login account was created, but its officer profile could not be saved. Contact an administrator before retrying.',
@@ -1459,7 +1453,7 @@ app.post('/api/create-officer', verifyToken, requireAdmin, async (req, res) => {
       message: `Officer ${cleanUsername} created`
     });
   } catch (error) {
-    console.error('Create officer error:', error.message);
+    console.error('Officer account creation failed.');
     res.status(500).json({
       success: false,
       message: error.code === 'auth/email-already-exists'
@@ -1505,7 +1499,7 @@ app.get('/api/admin/officer-activity', verifyToken, requireAdmin, async (req, re
       officers.set(doc.id, {
         uid: doc.id,
         username: data.username || data.name || data.email || 'Officer',
-        ward: data.ward || 'Unassigned',
+        ward: data.wardName || data.ward || 'Unassigned',
         total: 0,
         transactions: 0
       });
@@ -1543,7 +1537,7 @@ app.get('/api/admin/officer-activity', verifyToken, requireAdmin, async (req, re
 
     res.json({ success: true, date: todayKey, officers: result });
   } catch (error) {
-    console.error('Officer activity error:', error);
+    console.error('Officer activity request failed.');
     res.status(500).json({
       success: false,
       message: "Could not load today's officer activity."
@@ -1562,7 +1556,7 @@ app.get('/api/officers', verifyToken, requireAdmin, async (req, res) => {
         uid: doc.id,
         username: data.username || '',
         email: data.email || '',
-        ward: data.ward || '',
+        ward: data.wardName || data.ward || '',
         constituencyId: data.constituencyId || '',
         constituencyName: data.constituencyName || '',
         wardId: data.wardId || '',
@@ -1573,7 +1567,7 @@ app.get('/api/officers', verifyToken, requireAdmin, async (req, res) => {
     });
     res.json({ success: true, officers });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Could not load officers.' });
   }
 });
 
@@ -1630,7 +1624,7 @@ app.put('/api/officers/:uid/location', verifyToken, requireAdmin, async (req, re
       wardName: ward.name
     });
   } catch (error) {
-    console.error('Officer location assignment error:', error.message);
+    console.error('Officer location assignment failed.');
     return res.status(500).json({
       success: false,
       message: 'Could not update officer location assignment.'
@@ -1643,6 +1637,7 @@ app.post('/api/report', verifyToken, requireAdmin, async (req, res) => {
   try {
     const { type, startDate, endDate, ward, officerUid } = req.body;
     let query = db.collection('transactions');
+    let wardReportDocs = null;
 
     if (type === 'daily') {
       const s = Timestamp.fromDate(moment(startDate).startOf('day').toDate());
@@ -1653,12 +1648,20 @@ app.post('/api/report', verifyToken, requireAdmin, async (req, res) => {
       const e = Timestamp.fromDate(moment(endDate).endOf('day').toDate());
       query = query.where('createdAt', '>=', s).where('createdAt', '<=', e);
     } else if (type === 'ward') {
-      query = query.where('ward', '==', ward);
+      if (typeof ward !== 'string' || !ward.trim()) {
+        return res.status(400).json({ success: false, message: 'A valid ward is required.' });
+      }
+      const requestedWard = ward.trim();
+      const results = await Promise.all([
+        db.collection('transactions').where('wardName', '==', requestedWard).get(),
+        db.collection('transactions').where('ward', '==', requestedWard).get()
+      ]);
+      wardReportDocs = mergeWardReportDocs(results[0].docs, results[1].docs, requestedWard);
     } else if (type === 'officer') {
       query = query.where('createdBy', '==', officerUid);
     }
 
-    const snapshot = await query.orderBy('createdAt', 'desc').get();
+    const reportDocs = wardReportDocs || (await query.orderBy('createdAt', 'desc').get()).docs;
     const transactions = [];
     let totalRevenue = 0, mpesaTotal = 0, cashTotal = 0;
     let paidTransactions = 0;
@@ -1670,7 +1673,7 @@ app.post('/api/report', verifyToken, requireAdmin, async (req, res) => {
     };
     const revenueBreakdown = Object.create(null);
 
-    snapshot.forEach(doc => {
+    reportDocs.forEach(doc => {
       const d = doc.data();
       transactions.push({ id: doc.id, ...d });
 
@@ -1732,40 +1735,198 @@ app.post('/api/report', verifyToken, requireAdmin, async (req, res) => {
       transactions
     });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Could not generate report.' });
   }
 });
 
-// ── Broadcast ──────────────────────────────────────────────
+// ── Targeted Broadcasts ─────────────────────────────────────
 app.post('/api/broadcast', verifyToken, requireAdmin, async (req, res) => {
   try {
-    const { message } = req.body;
-    if (!message) return res.status(400).json({ success: false, message: 'Message required' });
+    const message = typeof req.body?.message === 'string'
+      ? req.body.message.trim()
+      : '';
+
+    if (!message || message.length > 2000) {
+      return res.status(400).json({
+        success: false,
+        message: 'A message of 1–2000 characters is required.'
+      });
+    }
+
+    const target = req.body?.target || { scope: 'all' };
+    const scope = target.scope || 'all';
+    let officers = [];
+
+    if (scope === 'all' || scope === 'constituency' || scope === 'ward') {
+      const snapshot = await db.collection('users')
+        .where('role', '==', 'officer')
+        .get();
+
+      officers = snapshot.docs.map(doc => ({
+        uid: doc.id,
+        ...doc.data()
+      }));
+
+      if (scope === 'constituency') {
+        const constituency = locationData.getConstituencyById(target.constituencyId);
+        if (!constituency) {
+          return res.status(400).json({
+            success: false,
+            message: 'Select a valid constituency.'
+          });
+        }
+
+        officers = officers.filter(
+          officer => officer.constituencyId === constituency.id
+        );
+      }
+
+      if (scope === 'ward') {
+        const constituency = locationData.getConstituencyById(target.constituencyId);
+        const ward = locationData.getWardById(target.constituencyId, target.wardId);
+
+        if (!constituency || !ward) {
+          return res.status(400).json({
+            success: false,
+            message: 'Select a valid constituency and ward.'
+          });
+        }
+
+        officers = officers.filter(
+          officer =>
+            officer.constituencyId === constituency.id &&
+            officer.wardId === ward.id
+        );
+      }
+    } else if (scope === 'officer') {
+      if (typeof target.officerUid !== 'string' || !target.officerUid.trim()) {
+        return res.status(400).json({
+          success: false,
+          message: 'Select a valid officer.'
+        });
+      }
+
+      const officerDoc = await db.collection('users')
+        .doc(target.officerUid.trim())
+        .get();
+
+      if (!officerDoc.exists || officerDoc.data().role !== 'officer') {
+        return res.status(404).json({
+          success: false,
+          message: 'The selected officer was not found.'
+        });
+      }
+
+      officers = [{ uid: officerDoc.id, ...officerDoc.data() }];
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid broadcast target.'
+      });
+    }
+
+    const recipientUids = [...new Set(officers.map(officer => officer.uid))];
+
+    if (recipientUids.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'There are no officers assigned to the selected target.'
+      });
+    }
 
     const senderData = await getOfficerData(req.user.uid);
-    await db.collection('broadcasts').add({
-      message,
-      senderName: senderData.username || 'Admin',
-      senderUid:  req.user.uid,
-      readBy:     [],
-      createdAt:  FieldValue.serverTimestamp()
-    });
 
-    res.json({ success: true, message: 'Broadcast sent' });
+    const broadcast = {
+      message,
+      senderName: senderData.username || senderData.name || 'Admin',
+      senderUid: req.user.uid,
+      targetScope: scope,
+      targetConstituencyId: scope === 'constituency' || scope === 'ward'
+        ? target.constituencyId
+        : null,
+      targetWardId: scope === 'ward' ? target.wardId : null,
+      targetOfficerUid: scope === 'officer' ? target.officerUid.trim() : null,
+      recipientUids,
+      recipientCount: recipientUids.length,
+      readBy: [],
+      createdAt: FieldValue.serverTimestamp()
+    };
+
+    await db.collection('broadcasts').add(broadcast);
+
+    return res.json({
+      success: true,
+      message: `Announcement sent to ${recipientUids.length} officer(s).`,
+      recipientCount: recipientUids.length
+    });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    console.error('Broadcast creation failed.');
+    return res.status(500).json({
+      success: false,
+      message: 'Could not send the announcement.'
+    });
   }
 });
 
-// Mark broadcast read
-app.post('/api/broadcast/:id/read', verifyToken, async (req, res) => {
+// Retrieve announcements addressed to the authenticated officer.
+app.get('/api/broadcasts', verifyToken, requireOfficer, async (req, res) => {
   try {
-    await db.collection('broadcasts').doc(req.params.id).update({
+    const snapshot = await db.collection('broadcasts')
+      .where('recipientUids', 'array-contains', req.user.uid)
+      .orderBy('createdAt', 'desc')
+      .limit(100)
+      .get();
+
+    const broadcasts = snapshot.docs.map(doc =>
+      serializeOfficerBroadcast(doc, req.user.uid)
+    );
+
+    res.json({ success: true, broadcasts });
+  } catch (error) {
+    console.error('Broadcast list request failed.');
+    res.status(500).json({
+      success: false,
+      message: 'Could not load announcements.'
+    });
+  }
+});
+
+// Only an intended officer recipient may acknowledge a broadcast.
+app.post('/api/broadcast/:id/read', verifyToken, requireOfficer, async (req, res) => {
+  try {
+    const broadcastRef = db.collection('broadcasts').doc(req.params.id);
+    const broadcastDoc = await broadcastRef.get();
+
+    if (!broadcastDoc.exists) {
+      return res.status(404).json({
+        success: false,
+        message: 'Announcement not found.'
+      });
+    }
+
+    const broadcast = broadcastDoc.data();
+
+    if (
+      !Array.isArray(broadcast.recipientUids) ||
+      !broadcast.recipientUids.includes(req.user.uid)
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: 'You are not a recipient of this announcement.'
+      });
+    }
+
+    await broadcastRef.update({
       readBy: FieldValue.arrayUnion(req.user.uid)
     });
-    res.json({ success: true });
+
+    return res.json({ success: true });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    console.error('Broadcast acknowledgement failed.');
+    return res.status(500).json({
+      success: false,
+      message: 'Could not update announcement status.'
+    });
   }
 });
 
@@ -1788,7 +1949,7 @@ app.post('/api/profile/update', verifyToken, async (req, res) => {
 
     res.json({ success: true, message: 'Profile updated successfully' });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Could not update profile.' });
   }
 });
 
@@ -1889,8 +2050,8 @@ app.post('/api/sync-offline', cashLimiter, verifyToken, requireOfficer, async (r
 
         if (existing.exists) {
           if (!matchesSavedPayment(existing.data())) {
-            const conflict = new Error('Offline receipt conflicts with an existing payment.');
-            conflict.statusCode = 409;
+            const conflict = new Error('Offline receipt conflict.');
+            conflict.code = 'PAYMENT_IDEMPOTENCY_CONFLICT';
             throw conflict;
           }
           return false;
@@ -1899,8 +2060,8 @@ app.post('/api/sync-offline', cashLimiter, verifyToken, requireOfficer, async (r
         const legacy = await transaction.get(legacyQuery);
         if (!legacy.empty) {
           if (!matchesSavedPayment(legacy.docs[0].data())) {
-            const conflict = new Error('Offline receipt conflicts with an existing payment.');
-            conflict.statusCode = 409;
+            const conflict = new Error('Offline receipt conflict.');
+            conflict.code = 'PAYMENT_IDEMPOTENCY_CONFLICT';
             throw conflict;
           }
           return false;
@@ -1909,7 +2070,7 @@ app.post('/api/sync-offline', cashLimiter, verifyToken, requireOfficer, async (r
         const offlineTransaction = {
           amount: tx.amount,
           plate: tx.plate,
-          ward: officerData.constituencyName,
+          ward: officerData.wardName || '',
           constituencyId: officerData.constituencyId,
           constituencyName: officerData.constituencyName,
           wardId: officerData.wardId,
@@ -1940,21 +2101,26 @@ app.post('/api/sync-offline', cashLimiter, verifyToken, requireOfficer, async (r
 
     res.json({ success: true, synced, skipped });
   } catch (error) {
-    console.error('Offline sync error:', error.message);
-    res.status(error.statusCode || 500).json({
+    console.error('Offline transaction sync failed.');
+    const isConflict = error.code === 'PAYMENT_IDEMPOTENCY_CONFLICT';
+    res.status(isConflict ? 409 : 500).json({
       success: false,
-      error: error.statusCode === 409
-        ? error.message
+      error: isConflict
+        ? 'This offline receipt conflicts with an existing payment.'
         : 'Could not sync offline transactions.'
     });
   }
 });
 
 
+// Keep API misses and unexpected request failures on a safe JSON contract.
+app.use('/api', createApiNotFoundHandler());
+app.use(createHttpErrorHandler());
+
 // ============== START ==============
 const server = app.listen(PORT, () => {
   console.log(`Bungoma Pay v3.0 running on port ${PORT}`);
-  console.log(`Callback URL= ${CALLBACK_URL}`);
+  console.log('Callback URL configured:', Boolean(CALLBACK_URL));
 
   mpesaCallbackRecovery.start();
   console.log('M-PESA callback recovery worker started.');
@@ -1966,13 +2132,13 @@ async function shutdown(signal) {
   try {
     await mpesaCallbackRecovery.stop();
   } catch (error) {
-    console.error('M-PESA recovery shutdown error:', error.message);
+    console.error('M-PESA recovery worker shutdown failed.');
     process.exitCode = 1;
   }
 
   server.close(error => {
     if (error) {
-      console.error('HTTP server shutdown error:', error.message);
+      console.error('HTTP server shutdown failed.');
       process.exitCode = 1;
       return;
     }

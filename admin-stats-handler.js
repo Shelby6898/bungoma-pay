@@ -148,10 +148,10 @@ function createAdminStatsHandler({ db }) {
         revenueBreakdown
       });
     } catch (error) {
-      console.error('Admin stats error:', error.message);
+      console.error('Admin stats request failed.');
       return res.status(500).json({
         success: false,
-        error: error.message
+        error: 'Could not load administrator statistics.'
       });
     }
   };

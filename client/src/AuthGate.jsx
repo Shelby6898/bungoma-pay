@@ -5,6 +5,7 @@ import {
   signOut,
 } from 'firebase/auth'
 import { auth } from './firebase'
+import OfficerPortal from './OfficerPortal'
 import './AuthGate.css'
 
 function LoginScreen({ onLogin, error, busy }) {
@@ -28,7 +29,7 @@ function LoginScreen({ onLogin, error, busy }) {
         </div>
 
         <div className="auth-heading">
-          <span>ADMINISTRATOR ACCESS</span>
+          <span>SECURE ACCOUNT ACCESS</span>
           <h1>Welcome back</h1>
           <p>Sign in to access the revenue management workspace.</p>
         </div>
@@ -64,7 +65,7 @@ function LoginScreen({ onLogin, error, busy }) {
         </form>
 
         <p className="auth-footnote">
-          Access is restricted to authorized administrator accounts.
+          Access is restricted to authorized Bungoma Pay accounts.
         </p>
       </section>
     </main>
@@ -101,7 +102,16 @@ export default function AuthGate({ children }) {
           },
         })
 
-        const result = await response.json()
+        const responseText = await response.text()
+        let result
+
+        try {
+          result = JSON.parse(responseText)
+        } catch {
+          throw new Error(
+            `Account verification returned non-JSON (HTTP ${response.status}, ${response.headers.get('content-type') || 'unknown content type'}). Check the API response.`
+          )
+        }
 
         if (!response.ok || !result.success) {
           throw new Error(result.message || 'Could not verify your account.')
@@ -111,14 +121,12 @@ export default function AuthGate({ children }) {
 
         const account = result.user || {}
 
-        if (account.role !== 'admin') {
-          setProfile(account)
-          setStatus('officer')
-          return
+        if (account.role !== 'admin' && account.role !== 'officer') {
+          throw new Error('This account does not have an authorized portal role.')
         }
 
         setProfile(account)
-        setStatus('admin')
+        setStatus(account.role)
       } catch (err) {
         if (!active) return
         setError(err.message || 'Unable to verify your account with the server.')
@@ -181,36 +189,7 @@ export default function AuthGate({ children }) {
   }
 
   if (status === 'officer') {
-    return (
-      <main className="auth-page">
-        <section className="auth-card">
-          <div className="auth-brand">
-            <div className="auth-brand-mark">B</div>
-            <div>
-              <strong>Bungoma Pay</strong>
-              <span>Revenue Management</span>
-            </div>
-          </div>
-
-          <div className="auth-heading">
-            <span>OFFICER ACCOUNT</span>
-            <h1>Officer portal required</h1>
-            <p>
-              This account is registered as an officer account.
-              The administrator dashboard is not available to this role.
-            </p>
-          </div>
-
-          <a className="auth-officer-link" href="/index.html">
-            Open existing officer portal
-          </a>
-
-          <button className="auth-secondary-button" onClick={handleSignOut}>
-            Sign out
-          </button>
-        </section>
-      </main>
-    )
+    return <OfficerPortal profile={profile} />
   }
 
   return (
