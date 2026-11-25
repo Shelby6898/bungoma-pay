@@ -283,7 +283,7 @@ async function getOfficerData(uid) {
 // ============== ROUTES ==============
 
 app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/public/login.html');
+  res.redirect(302, '/dashboard/');
 });
 // Current user info
 app.get('/api/me', verifyToken, async (req, res) => {
