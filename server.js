@@ -19,6 +19,7 @@ const { createAdminStatsHandler } = require('./admin-stats-handler');
 const { serializeOfficerBroadcast } = require('./broadcast-response');
 const { mergeWardReportDocs } = require('./transaction-ward');
 const { createMpesaPaymentIntents } = require('./mpesa-payment-intents');
+const { createApiNotFoundHandler, createHttpErrorHandler } = require('./http-error-handlers');
 
 const app = express();
 
@@ -100,7 +101,7 @@ try {
     username: process.env.AT_USERNAME || 'sandbox'
   });
 } catch(e) {
-  console.log('AT init skipped:', e.message);
+  console.warn("Africa's Talking SMS service initialization skipped.");
 }
 
 // ============== ENV ==============
@@ -195,7 +196,7 @@ async function requireOfficer(req, res, next) {
     req.userData = officerData;
     next();
   } catch (error) {
-    console.error('Officer authorization error:', error.message);
+    console.error('Officer authorization check failed.');
     return res.status(500).json({
       success: false,
       message: 'Could not verify officer access'
@@ -271,7 +272,7 @@ async function sendReceiptSMS(phone, amount, receipt, plate) {
   try {
     await at.SMS.send({ to: [p], message: msg });
   } catch (e) {
-    console.log('SMS ERROR=', e.message);
+    console.error('Receipt SMS delivery failed.');
   }
 }
 async function getOfficerData(uid) {
@@ -294,7 +295,7 @@ app.get('/api/me', verifyToken, async (req, res) => {
 app.post('/api/heartbeat', verifyToken, async (req, res) => {
   await db.collection('users').doc(req.user.uid).update({
     status: 'online', lastSeen: FieldValue.serverTimestamp()
-  }).catch(() => {});
+  });
   res.json({ success: true });
 });
 
@@ -302,7 +303,7 @@ app.post('/api/heartbeat', verifyToken, async (req, res) => {
 app.post('/api/offline', verifyToken, async (req, res) => {
   await db.collection('users').doc(req.user.uid).update({
     status: 'offline', lastSeen: FieldValue.serverTimestamp()
-  }).catch(() => {});
+  });
   res.json({ success: true });
 });
 
@@ -570,11 +571,7 @@ transaction.update(intentRef, {
     pendingTransactions[providerCheckoutId] = tx;
 
     await processMpesaCallback(providerCheckoutId).catch(error => {
-      console.error(
-        'Retained M-PESA callback replay deferred:',
-        providerCheckoutId,
-        error.message
-      );
+      console.error('Retained M-PESA callback replay deferred');
     });
 
     console.log(
@@ -652,7 +649,7 @@ transaction.update(intentRef, {
 
         return { updated: true };
       }).catch(updateError => {
-        console.error('Could not mark M-PESA intent and attempt as uncertain:', updateError.message);
+        console.error('Could not persist uncertain M-PESA submission state.');
         return null;
       });
 
@@ -675,11 +672,9 @@ transaction.update(intentRef, {
       });
     }
 
-    return res.status(error.statusCode || 500).json({
+    return res.status(500).json({
       success: false,
-      message: error.statusCode === 409
-        ? error.message
-        : 'Could not prepare the payment request. No STK submission was attempted.'
+      message: 'Could not prepare the payment request. No STK submission was attempted.'
     });
   }
 });
@@ -778,14 +773,14 @@ app.post('/api/callback', callbackLimiter, async (req, res) => {
     callbackRetained = true;
 
     const processed = await processMpesaCallback(checkoutId);
-    console.log('M-PESA callback processing state:', checkoutId, processed.state);
+    console.log('M-PESA callback processing state:', processed.state);
 
     return res.status(200).json({
       ResultCode: 0,
       ResultDesc: 'Accepted'
     });
   } catch (error) {
-    console.log('CALLBACK ERROR=', error.message);
+    console.error('M-PESA callback handler failed; callback retained:', callbackRetained);
 
     if (!callbackRetained) {
       return res.status(500).json({
@@ -866,8 +861,8 @@ app.post('/api/cash', cashLimiter, verifyToken, requireOfficer, async (req, res)
           saved.revenueSubType === revenueSubType;
 
         if (!sameRequest) {
-          const conflict = new Error('This payment identifier belongs to a different request.');
-          conflict.statusCode = 409;
+          const conflict = new Error('Payment identifier conflict.');
+          conflict.code = 'PAYMENT_IDEMPOTENCY_CONFLICT';
           throw conflict;
         }
 
@@ -906,11 +901,12 @@ app.post('/api/cash', cashLimiter, verifyToken, requireOfficer, async (req, res)
 
     res.json({ success: true, receipt });
   } catch (error) {
-    console.error('Cash payment error:', error.message);
-    res.status(error.statusCode || 500).json({
+    console.error('Cash payment request failed.');
+    const isConflict = error.code === 'PAYMENT_IDEMPOTENCY_CONFLICT';
+    res.status(isConflict ? 409 : 500).json({
       success: false,
-      error: error.statusCode === 409
-        ? error.message
+      error: isConflict
+        ? 'This payment identifier belongs to a different request.'
         : 'Could not record cash payment.'
     });
   }
@@ -937,7 +933,7 @@ app.get('/api/transactions', verifyToken, async (req, res) => {
     snapshot.forEach(doc => transactions.push({ id: doc.id, ...doc.data() }));
     res.json(transactions);
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Could not load transactions.' });
   }
 });
 
@@ -987,7 +983,7 @@ app.get('/api/admin/mpesa/pending', verifyToken, requireAdmin, async (req, res) 
       payments
     });
   } catch (error) {
-    console.error('Pending M-PESA list error:', error.message);
+    console.error('Pending M-PESA list request failed.');
     return res.status(500).json({
       success: false,
       error: 'Could not load pending M-PESA payments.'
@@ -1277,7 +1273,7 @@ app.post('/api/admin/mpesa/reconcile', verifyToken, requireAdmin, async (req, re
         : 'STK Query reports success, but callback payment evidence is still required. Transaction remains pending.'
     });
   } catch (error) {
-    console.error('M-PESA reconciliation error:', error.message);
+    console.error('M-PESA reconciliation request failed.');
     return res.status(502).json({
       success: false,
       error: 'Reconciliation could not be completed. Transaction was not automatically marked as paid.'
@@ -1374,7 +1370,7 @@ app.get('/api/admin/revenue-trend', verifyToken, requireAdmin, async (req, res) 
 
     res.json({ success: true, days, totalRevenue });
   } catch (error) {
-    console.error('Revenue trend error:', error);
+    console.error('Revenue trend request failed.');
     res.status(500).json({
       success: false,
       message: 'Could not load the seven-day revenue trend.'
@@ -1442,7 +1438,7 @@ app.post('/api/create-officer', verifyToken, requireAdmin, async (req, res) => {
         createdAt: FieldValue.serverTimestamp()
       });
     } catch (profileError) {
-      console.error('Officer profile creation failed after Auth account creation:', profileError.message);
+      console.error('Officer profile creation failed after Auth account creation.');
       return res.status(500).json({
         success: false,
         message: 'The login account was created, but its officer profile could not be saved. Contact an administrator before retrying.',
@@ -1457,7 +1453,7 @@ app.post('/api/create-officer', verifyToken, requireAdmin, async (req, res) => {
       message: `Officer ${cleanUsername} created`
     });
   } catch (error) {
-    console.error('Create officer error:', error.message);
+    console.error('Officer account creation failed.');
     res.status(500).json({
       success: false,
       message: error.code === 'auth/email-already-exists'
@@ -1541,7 +1537,7 @@ app.get('/api/admin/officer-activity', verifyToken, requireAdmin, async (req, re
 
     res.json({ success: true, date: todayKey, officers: result });
   } catch (error) {
-    console.error('Officer activity error:', error);
+    console.error('Officer activity request failed.');
     res.status(500).json({
       success: false,
       message: "Could not load today's officer activity."
@@ -1571,7 +1567,7 @@ app.get('/api/officers', verifyToken, requireAdmin, async (req, res) => {
     });
     res.json({ success: true, officers });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Could not load officers.' });
   }
 });
 
@@ -1628,7 +1624,7 @@ app.put('/api/officers/:uid/location', verifyToken, requireAdmin, async (req, re
       wardName: ward.name
     });
   } catch (error) {
-    console.error('Officer location assignment error:', error.message);
+    console.error('Officer location assignment failed.');
     return res.status(500).json({
       success: false,
       message: 'Could not update officer location assignment.'
@@ -1739,7 +1735,7 @@ app.post('/api/report', verifyToken, requireAdmin, async (req, res) => {
       transactions
     });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Could not generate report.' });
   }
 });
 
@@ -1864,7 +1860,7 @@ app.post('/api/broadcast', verifyToken, requireAdmin, async (req, res) => {
       recipientCount: recipientUids.length
     });
   } catch (error) {
-    console.error('Broadcast creation error:', error);
+    console.error('Broadcast creation failed.');
     return res.status(500).json({
       success: false,
       message: 'Could not send the announcement.'
@@ -1887,7 +1883,7 @@ app.get('/api/broadcasts', verifyToken, requireOfficer, async (req, res) => {
 
     res.json({ success: true, broadcasts });
   } catch (error) {
-    console.error('[BROADCASTS-API] Failed to load announcements:', error);
+    console.error('Broadcast list request failed.');
     res.status(500).json({
       success: false,
       message: 'Could not load announcements.'
@@ -1926,7 +1922,7 @@ app.post('/api/broadcast/:id/read', verifyToken, requireOfficer, async (req, res
 
     return res.json({ success: true });
   } catch (error) {
-    console.error('Broadcast acknowledgement error:', error);
+    console.error('Broadcast acknowledgement failed.');
     return res.status(500).json({
       success: false,
       message: 'Could not update announcement status.'
@@ -1953,7 +1949,7 @@ app.post('/api/profile/update', verifyToken, async (req, res) => {
 
     res.json({ success: true, message: 'Profile updated successfully' });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({ success: false, error: 'Could not update profile.' });
   }
 });
 
@@ -2054,8 +2050,8 @@ app.post('/api/sync-offline', cashLimiter, verifyToken, requireOfficer, async (r
 
         if (existing.exists) {
           if (!matchesSavedPayment(existing.data())) {
-            const conflict = new Error('Offline receipt conflicts with an existing payment.');
-            conflict.statusCode = 409;
+            const conflict = new Error('Offline receipt conflict.');
+            conflict.code = 'PAYMENT_IDEMPOTENCY_CONFLICT';
             throw conflict;
           }
           return false;
@@ -2064,8 +2060,8 @@ app.post('/api/sync-offline', cashLimiter, verifyToken, requireOfficer, async (r
         const legacy = await transaction.get(legacyQuery);
         if (!legacy.empty) {
           if (!matchesSavedPayment(legacy.docs[0].data())) {
-            const conflict = new Error('Offline receipt conflicts with an existing payment.');
-            conflict.statusCode = 409;
+            const conflict = new Error('Offline receipt conflict.');
+            conflict.code = 'PAYMENT_IDEMPOTENCY_CONFLICT';
             throw conflict;
           }
           return false;
@@ -2105,21 +2101,26 @@ app.post('/api/sync-offline', cashLimiter, verifyToken, requireOfficer, async (r
 
     res.json({ success: true, synced, skipped });
   } catch (error) {
-    console.error('Offline sync error:', error.message);
-    res.status(error.statusCode || 500).json({
+    console.error('Offline transaction sync failed.');
+    const isConflict = error.code === 'PAYMENT_IDEMPOTENCY_CONFLICT';
+    res.status(isConflict ? 409 : 500).json({
       success: false,
-      error: error.statusCode === 409
-        ? error.message
+      error: isConflict
+        ? 'This offline receipt conflicts with an existing payment.'
         : 'Could not sync offline transactions.'
     });
   }
 });
 
 
+// Keep API misses and unexpected request failures on a safe JSON contract.
+app.use('/api', createApiNotFoundHandler());
+app.use(createHttpErrorHandler());
+
 // ============== START ==============
 const server = app.listen(PORT, () => {
   console.log(`Bungoma Pay v3.0 running on port ${PORT}`);
-  console.log(`Callback URL= ${CALLBACK_URL}`);
+  console.log('Callback URL configured:', Boolean(CALLBACK_URL));
 
   mpesaCallbackRecovery.start();
   console.log('M-PESA callback recovery worker started.');
@@ -2131,13 +2132,13 @@ async function shutdown(signal) {
   try {
     await mpesaCallbackRecovery.stop();
   } catch (error) {
-    console.error('M-PESA recovery shutdown error:', error.message);
+    console.error('M-PESA recovery worker shutdown failed.');
     process.exitCode = 1;
   }
 
   server.close(error => {
     if (error) {
-      console.error('HTTP server shutdown error:', error.message);
+      console.error('HTTP server shutdown failed.');
       process.exitCode = 1;
       return;
     }

@@ -111,7 +111,7 @@ function createMpesaCallbackProcessor({
       verifiedResultCode < 0 ||
       verifiedResultCode !== resultCode
     ) {
-      console.log('M-PESA callback/query verification mismatch:', checkoutId);
+      console.warn('M-PESA callback/query verification mismatch');
       const state = await markReviewIfCurrent(inboxRef, expectedCallback);
       return {
         state: state === 'REVIEW' ? 'VERIFICATION_MISMATCH' : state
@@ -130,7 +130,7 @@ function createMpesaCallbackProcessor({
         !Number.isSafeInteger(callbackAmountNumber) ||
         callbackAmountNumber !== attemptAmount
       ) {
-        console.log('M-PESA callback amount mismatch:', checkoutId);
+        console.warn('M-PESA callback amount mismatch');
         const state = await markReviewIfCurrent(inboxRef, expectedCallback);
         return {
           state: state === 'REVIEW' ? 'AMOUNT_MISMATCH' : state
@@ -281,7 +281,7 @@ function createMpesaCallbackProcessor({
     });
 
     if (result.state === 'CONFLICT' || result.state === 'REVIEW') {
-      console.log('M-PESA callback requires review:', checkoutId);
+      console.warn('M-PESA callback requires review');
       return { state: result.state };
     }
 
@@ -293,12 +293,9 @@ function createMpesaCallbackProcessor({
       delete pendingTransactions[checkoutId];
 
       if (result.changed && result.failed) {
-        console.log('M-PESA payment failed:', checkoutId, verifiedResultCode);
+        console.log('M-PESA payment failed; result code:', verifiedResultCode);
       } else if (result.changed) {
-        console.log(
-          'M-PESA payment successful; receipt pending verification:',
-          checkoutId
-        );
+        console.log('M-PESA payment successful; receipt pending verification');
       }
 
       return { state: result.state };

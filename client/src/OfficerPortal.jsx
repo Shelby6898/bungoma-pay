@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { signOut } from 'firebase/auth'
 import { collection, onSnapshot, orderBy, query, where } from 'firebase/firestore'
-import { Activity, Bell, Camera, CheckCircle2, Clock3, LogOut, Menu, Settings, Wallet, X } from 'lucide-react'
+import { Activity, Bell, CheckCircle2, Clock3, LogOut, Settings, Wallet, X } from 'lucide-react'
 import { auth, db } from './firebase'
 import './OfficerPortal.css'
 
@@ -19,6 +19,7 @@ const readQueue = uid => {
 
 export default function OfficerPortal({ profile }) {
   const user = auth.currentUser
+  const userUid = user?.uid
   const [transactions, setTransactions] = useState([])
   const [queue, setQueue] = useState(() => user ? readQueue(user.uid) : [])
   const [broadcast, setBroadcast] = useState(null)
@@ -42,8 +43,8 @@ export default function OfficerPortal({ profile }) {
   const token = async () => auth.currentUser?.getIdToken()
 
   useEffect(() => {
-    if (!user) return
-    const txQuery = query(collection(db, 'transactions'), where('createdBy', '==', user.uid), orderBy('createdAt', 'desc'))
+    if (!userUid) return
+    const txQuery = query(collection(db, 'transactions'), where('createdBy', '==', userUid), orderBy('createdAt', 'desc'))
     const stopTransactions = onSnapshot(txQuery, snapshot => {
       setTransactions(snapshot.docs.map(item => ({ id: item.id, ...item.data() })))
     }, () => setStatus({ type: 'error', message: 'Could not load your live transactions.' }))
@@ -63,8 +64,8 @@ export default function OfficerPortal({ profile }) {
           .find(item => !item.read)
 
         setBroadcast(unread || null)
-      } catch (error) {
-        console.error('[BROADCASTS-API] Error:', error)
+      } catch {
+        // Announcement refresh is best-effort; retry on the next interval.
       }
     }
 
@@ -73,8 +74,12 @@ export default function OfficerPortal({ profile }) {
 
     const heartbeat = window.setInterval(async () => {
       if (!navigator.onLine || !auth.currentUser) return
-      const idToken = await token()
-      fetch('/api/heartbeat', { method: 'POST', headers: { Authorization: 'Bearer ' + idToken } }).catch(() => {})
+      try {
+        const idToken = await token()
+        await fetch('/api/heartbeat', { method: 'POST', headers: { Authorization: 'Bearer ' + idToken } })
+      } catch {
+        // Heartbeat is best-effort; the next interval will retry.
+      }
     }, 30000)
     const onlineHandler = () => setOnline(navigator.onLine)
     window.addEventListener('online', onlineHandler)
@@ -86,15 +91,17 @@ export default function OfficerPortal({ profile }) {
       window.removeEventListener('online', onlineHandler)
       window.removeEventListener('offline', onlineHandler)
     }
-  }, [user?.uid])
+  }, [userUid])
 
   useEffect(() => {
-    if (user) localStorage.setItem('offlineQueue:' + user.uid, JSON.stringify(queue))
-  }, [queue, user?.uid])
+    if (userUid) localStorage.setItem('offlineQueue:' + userUid, JSON.stringify(queue))
+  }, [queue, userUid])
 
   useEffect(() => {
-    if (online && queue.length && user) syncOffline()
-  }, [online, user?.uid, queue.length])
+    if (online && queue.length && userUid) syncOffline()
+    // Deliberately trigger auto-sync only on connectivity, account, or queue-size changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [online, userUid, queue.length])
 
   async function request(path, payload) {
     const idToken = await token()

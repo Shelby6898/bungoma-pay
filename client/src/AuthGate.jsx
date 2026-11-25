@@ -154,7 +154,7 @@ export default function AuthGate({ children }) {
         'auth/network-request-failed': 'Network error. Check your connection.',
       }
 
-      setError(`${messages[err.code] || 'Sign-in failed. Please try again.'} [${err.code || 'unknown'}]`)
+      setError(messages[err.code] || 'Sign-in failed. Please try again.')
     } finally {
       setBusy(false)
     }
