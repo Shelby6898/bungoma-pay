@@ -14,8 +14,12 @@ const revenueOptions = {
 }
 const money = value => 'KES ' + Number(value || 0).toLocaleString('en-KE')
 const readQueue = uid => {
-  try { return JSON.parse(localStorage.getItem('offlineQueue:' + uid) || '[]') }
-  catch { return [] }
+  try {
+    const saved = JSON.parse(localStorage.getItem('offlineQueue:' + uid) || '[]')
+    return Array.isArray(saved) ? saved : []
+  } catch {
+    return []
+  }
 }
 
 export default function OfficerPortal({ profile }) {
@@ -95,7 +99,12 @@ export default function OfficerPortal({ profile }) {
   }, [userUid])
 
   useEffect(() => {
-    if (userUid) localStorage.setItem('offlineQueue:' + userUid, JSON.stringify(queue))
+    if (!userUid) return
+    try {
+      localStorage.setItem('offlineQueue:' + userUid, JSON.stringify(queue))
+    } catch {
+      // Offline cash submission checks storage before adding new queue items.
+    }
   }, [queue, userUid])
 
   useEffect(() => {
@@ -152,8 +161,17 @@ export default function OfficerPortal({ profile }) {
     const payload = { amount: cashAmount, plate: cashClient.trim(), revenueType: cashType, revenueSubType: cashSub }
     if (!online) {
       const offline = { ...payload, revenueSubType: cashSub, createdBy: user.uid, receipt: 'OFFLINE-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6).toUpperCase(), createdAt: new Date().toISOString() }
-      setQueue(current => [...current, offline])
-      setStatus({ type: 'success', message: 'Saved securely on this device. It will sync when you are online.' })
+      const nextQueue = [...queue, offline]
+
+      try {
+        localStorage.setItem('offlineQueue:' + user.uid, JSON.stringify(nextQueue))
+      } catch {
+        setStatus({ type: 'error', message: 'Could not save this collection on the device. Check available storage and try again.' })
+        return
+      }
+
+      setQueue(nextQueue)
+      setStatus({ type: 'success', message: 'Saved on this device. It will sync when you are online.' })
       setCashAmount(''); setCashClient('')
       return
     }
@@ -203,9 +221,15 @@ export default function OfficerPortal({ profile }) {
 
   async function saveProfile(event) {
     event.preventDefault()
+    const cleanName = displayName.trim()
+    if (!cleanName) {
+      setStatus({ type: 'error', message: 'Enter a valid display name.' })
+      return
+    }
+    if (busy) return
     setBusy(true)
     try {
-      await request('/api/profile/update', { username: displayName.trim() })
+      await request('/api/profile/update', { username: cleanName })
       setStatus({ type: 'success', message: 'Profile updated.' })
       setSettingsOpen(false)
     } catch (error) { setStatus({ type: 'error', message: error.message }) }

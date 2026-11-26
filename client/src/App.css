@@ -450,6 +450,8 @@
 }
 
 .select-button {
+  display: inline-flex;
+  align-items: center;
   min-height: 30px;
   padding: 0 9px;
   color: #687990;
@@ -1410,6 +1412,51 @@
   .officers-summary {
     gap: 9px;
   }
+}
+
+
+/* OFFICER CREATION FORM */
+.officers-heading-actions { display:flex; align-items:center; gap:9px; flex-wrap:wrap; }
+.officers-add, .officer-form-cancel {
+  min-height:38px; display:inline-flex; align-items:center; justify-content:center;
+  gap:8px; padding:0 13px; border:1px solid var(--border); border-radius:7px;
+  font:inherit; font-size:12px; font-weight:600; cursor:pointer;
+}
+.officers-add { color:#fff; background:var(--blue); border-color:var(--blue); }
+.officers-add:disabled, .officer-form-cancel:disabled { opacity:.6; cursor:not-allowed; }
+.officer-create-form {
+  display:flex; flex-direction:column; gap:17px; padding:20px;
+  background:#fff; border:1px solid var(--border); border-radius:10px;
+}
+.officer-form-heading h2 { margin:0 0 5px; color:var(--text); font-size:15px; }
+.officer-form-heading p { margin:0; color:var(--muted); font-size:11px; }
+.officer-form-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:15px; }
+.officer-form-grid label { display:flex; flex-direction:column; gap:7px; min-width:0; }
+.officer-form-grid label > span { color:var(--text); font-size:11px; font-weight:600; }
+.officer-form-grid input, .officer-form-grid select {
+  width:100%; min-width:0; min-height:41px; padding:9px 11px; color:var(--text);
+  background:#fff; border:1px solid var(--border); border-radius:7px;
+  font:inherit; font-size:12px;
+}
+.officer-form-grid input:focus, .officer-form-grid select:focus {
+  outline:2px solid var(--blue-light); border-color:var(--blue);
+}
+.officer-form-grid select:disabled { color:var(--muted); background:#f8fafc; }
+.officer-form-actions { display:flex; justify-content:flex-end; gap:9px; flex-wrap:wrap; }
+.officer-form-cancel { color:var(--text); background:#fff; }
+.officer-form-feedback {
+  display:flex; align-items:flex-start; gap:9px; padding:11px 12px;
+  border-radius:7px; font-size:12px; line-height:1.5; overflow-wrap:anywhere;
+}
+.officer-form-success { color:#166534; background:#f0fdf4; border:1px solid #bbf7d0; }
+.officer-form-error { color:#9a3412; background:#fff7ed; border:1px solid #fed7aa; }
+.officer-form-feedback svg { flex-shrink:0; margin-top:1px; }
+@media (max-width:600px) {
+  .officers-heading-actions { width:100%; }
+  .officer-create-form { padding:14px; }
+  .officer-form-grid { grid-template-columns:minmax(0,1fr); }
+  .officer-form-actions { flex-direction:column-reverse; }
+  .officer-form-actions button { width:100%; }
 }
 
 /* TRANSACTIONS PAGE */

@@ -81,7 +81,9 @@ function LoginScreen({ portal, onLogin, error, busy }) {
 }
 
 export default function AuthGate() {
-  const path = window.location.pathname.replace(/\/+$/, '') || '/'
+  const path = window.location.pathname
+    .replace(/^\/dashboard(?=\/|$)/, '')
+    .replace(/\/+$/, '') || '/'
   const portal = path.startsWith('/officer') ? 'officer' : 'admin'
   const [status, setStatus] = useState('checking')
   const [profile, setProfile] = useState(null)
