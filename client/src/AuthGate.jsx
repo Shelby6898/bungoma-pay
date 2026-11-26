@@ -1,11 +1,12 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
   signOut,
 } from 'firebase/auth'
 import { auth } from './firebase'
-import OfficerPortal from './OfficerPortal'
+const AdminApp = lazy(() => import('./App.jsx'))
+const OfficerPortal = lazy(() => import('./OfficerPortal.jsx'))
 import './AuthGate.css'
 
 function LoginScreen({ portal, onLogin, error, busy }) {
@@ -79,7 +80,7 @@ function LoginScreen({ portal, onLogin, error, busy }) {
   )
 }
 
-export default function AuthGate({ children }) {
+export default function AuthGate() {
   const path = window.location.pathname.replace(/\/+$/, '') || '/'
   const portal = path.startsWith('/officer') ? 'officer' : 'admin'
   const [status, setStatus] = useState('checking')
@@ -187,13 +188,19 @@ export default function AuthGate({ children }) {
           <span>Administrator: {profile?.email || 'Authorized'}</span>
           <button onClick={handleSignOut}>Sign out</button>
         </div>
-        {children}
+        <Suspense fallback={<main className="auth-loading"><div className="auth-spinner" /><p>Loading administrator portal...</p></main>}>
+          <AdminApp />
+        </Suspense>
       </>
     )
   }
 
   if (status === 'authorized' && portal === 'officer') {
-    return <OfficerPortal profile={profile} />
+    return (
+      <Suspense fallback={<main className="auth-loading"><div className="auth-spinner" /><p>Loading officer portal...</p></main>}>
+        <OfficerPortal profile={profile} />
+      </Suspense>
+    )
   }
 
   return (

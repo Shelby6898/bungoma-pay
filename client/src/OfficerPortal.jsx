@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { signOut } from 'firebase/auth'
 import { collection, onSnapshot, orderBy, query, where } from 'firebase/firestore'
 import { Activity, Bell, CheckCircle2, Clock3, LogOut, Settings, Wallet, X } from 'lucide-react'
-import { auth, db } from './firebase'
+import { auth } from './firebase'
+import { db } from './firestore'
 import './OfficerPortal.css'
 
 const revenueOptions = {
