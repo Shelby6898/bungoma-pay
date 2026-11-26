@@ -40,6 +40,7 @@ const navigation = [
 function App() {
   const [activePage, setActivePage] = useState('Overview')
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [globalSearch, setGlobalSearch] = useState('')
 
   const selectPage = (page) => {
     setActivePage(page)
@@ -95,7 +96,7 @@ function App() {
             <p>Authorized access for revenue management.</p>
           </div>
 
-          <button className="profile-button">
+          <button className="profile-button" type="button" onClick={() => selectPage('Settings')}>
             <div className="avatar admin-avatar">A</div>
             <div className="profile-info">
               <strong>Administrator</strong>
@@ -126,10 +127,19 @@ function App() {
           <div className="topbar-actions">
             <div className="search-box">
               <Search size={17} />
-              <input type="search" placeholder="Search..." aria-label="Search" />
+              <input
+                type="search"
+                placeholder="Search transactions..."
+                aria-label="Search transactions"
+                value={globalSearch}
+                onChange={(event) => setGlobalSearch(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') selectPage('Transactions')
+                }}
+              />
               <kbd>⌘ K</kbd>
             </div>
-            <button className="icon-button notification-button" aria-label="Notifications">
+            <button className="icon-button notification-button" type="button" onClick={() => selectPage('Broadcasts')} aria-label="Open broadcasts" title="Open broadcasts">
               <Bell size={19} />
               <span />
             </button>
@@ -146,9 +156,9 @@ function App() {
 
         <div className="page-content">
           {activePage === 'Overview' ? (
-            <Dashboard />
+            <Dashboard onNavigate={selectPage} />
           ) : activePage === 'Transactions' ? (
-            <TransactionsPage />
+            <TransactionsPage key={globalSearch} initialSearch={globalSearch} />
           ) : activePage === 'Reports' ? (
             <ReportsPage />
           ) : activePage === 'Broadcasts' ? (
@@ -236,7 +246,7 @@ function PaymentStatusAudit({ summary, loading = false, error = false }) {
   )
 }
 
-function Dashboard() {
+function Dashboard({ onNavigate }) {
   const [stats, setStats] = useState(null)
   const [transactions, setTransactions] = useState([])
   const [dataLoading, setDataLoading] = useState(true)
@@ -247,7 +257,37 @@ function Dashboard() {
   const [officerActivity, setOfficerActivity] = useState([])
   const [officerActivityLoading, setOfficerActivityLoading] = useState(true)
   const [officerActivityError, setOfficerActivityError] = useState('')
+  function exportDashboardTransactions() {
+    if (!transactions.length) return
 
+    const columns = [
+      'Receipt', 'Officer', 'Revenue stream', 'Ward',
+      'Payment method', 'Amount', 'Status', 'Date',
+    ]
+
+    const rows = transactions.map((item) => [
+      item.receipt,
+      item.officerUsername,
+      item.revenueType,
+      item.wardName || item.ward,
+      item.paymentMethod,
+      item.amount,
+      item.status,
+      formatTransactionTime(item.createdAt),
+    ])
+
+    const csvCell = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`
+    const csv = [columns, ...rows].map((row) => row.map(csvCell).join(',')).join('\n')
+    const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `bungoma-pay-transactions-${new Date().toISOString().slice(0, 10)}.csv`
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    URL.revokeObjectURL(url)
+  }
 
   const totalRevenue = Number(stats?.totalRevenue) || 0
   const mpesaTotal = Number(stats?.mpesaTotal) || 0
@@ -415,8 +455,17 @@ function Dashboard() {
           <p>Monitor revenue collection and field operations.</p>
         </div>
         <div className="heading-actions">
-          <button className="button button-secondary"><Download size={16} /> Export</button>
-          <button className="button button-primary"><Plus size={17} /> Add officer</button>
+          <button
+            className="button button-secondary"
+            onClick={exportDashboardTransactions}
+            disabled={dataLoading || dataError || transactions.length === 0}
+            title={transactions.length ? 'Download loaded transactions as CSV' : 'No transactions available to export'}
+          >
+            <Download size={16} /> Export
+          </button>
+          <button className="button button-primary" onClick={() => onNavigate('Officers')}>
+            <Plus size={17} /> Add officer
+          </button>
         </div>
       </section>
 
@@ -475,7 +524,7 @@ function Dashboard() {
               <h2>Revenue overview</h2>
               <p>Collection performance over time</p>
             </div>
-            <button className="select-button">Last 7 days <ChevronRight size={15} /></button>
+            <span className="select-button" aria-label="Revenue chart period: last 7 days">Last 7 days</span>
           </div>
 
           <div className="chart-summary">
@@ -535,7 +584,7 @@ function Dashboard() {
               <h2>Collection channels</h2>
               <p>Revenue by payment method</p>
             </div>
-            <button className="icon-button" aria-label="More options"><MoreHorizontal size={20} /></button>
+            <span className="icon-button" aria-hidden="true"><MoreHorizontal size={20} /></span>
           </div>
 
           <div className="donut-wrap">
@@ -615,7 +664,7 @@ function Dashboard() {
             <h2>Recent transactions</h2>
             <p>Latest revenue collection activity</p>
           </div>
-          <button className="text-button">View all <ArrowUpRight size={15} /></button>
+          <button className="text-button" onClick={() => onNavigate("Transactions")}>View all <ArrowUpRight size={15} /></button>
         </div>
 
         <div className="table-scroll">
@@ -671,7 +720,7 @@ function Dashboard() {
         </div>
         <div className="table-footer">
           <span>{dataLoading ? "Loading..." : dataError ? "Data unavailable" : `Showing ${transactions.length} latest transactions`}</span>
-          <button className="text-button">All transactions <ArrowUpRight size={15} /></button>
+          <button className="text-button" onClick={() => onNavigate("Transactions")}>All transactions <ArrowUpRight size={15} /></button>
         </div>
       </section>
 
@@ -679,7 +728,9 @@ function Dashboard() {
         <div className="panel activity-panel">
           <div className="panel-heading">
             <div><h2>Field activity</h2><p>Today's paid collections by officer</p></div>
-            <button className="text-button">View officers <ChevronRight size={15} /></button>
+            <button className="text-button" onClick={() => onNavigate('Officers')}>
+              View officers <ChevronRight size={15} />
+            </button>
           </div>
 
           {officerActivityLoading ? (
@@ -727,9 +778,9 @@ function Dashboard() {
 
         <div className="panel quick-panel">
           <div className="panel-heading"><div><h2>Quick actions</h2><p>Common administration tasks</p></div></div>
-          <button className="quick-action"><span className="quick-icon quick-blue"><Plus size={17} /></span><span><strong>Add officer</strong><small>Create an officer account</small></span><ChevronRight size={17} /></button>
-          <button className="quick-action"><span className="quick-icon quick-purple"><ChartNoAxesCombined size={17} /></span><span><strong>Generate report</strong><small>Review collection performance</small></span><ChevronRight size={17} /></button>
-          <button className="quick-action"><span className="quick-icon quick-orange"><Megaphone size={17} /></span><span><strong>Send broadcast</strong><small>Message field officers</small></span><ChevronRight size={17} /></button>
+          <button className="quick-action" onClick={() => onNavigate('Officers')}><span className="quick-icon quick-blue"><Plus size={17} /></span><span><strong>Add officer</strong><small>Create an officer account</small></span><ChevronRight size={17} /></button>
+          <button className="quick-action" onClick={() => onNavigate('Reports')}><span className="quick-icon quick-purple"><ChartNoAxesCombined size={17} /></span><span><strong>Generate report</strong><small>Review collection performance</small></span><ChevronRight size={17} /></button>
+          <button className="quick-action" onClick={() => onNavigate('Broadcasts')}><span className="quick-icon quick-orange"><Megaphone size={17} /></span><span><strong>Send broadcast</strong><small>Message field officers</small></span><ChevronRight size={17} /></button>
         </div>
       </section>
     </>
@@ -775,6 +826,118 @@ function OfficersPage() {
   const [error, setError] = useState('')
   const [search, setSearch] = useState('')
   const [reloadKey, setReloadKey] = useState(0)
+
+  const [showCreateForm, setShowCreateForm] = useState(false)
+  const [locations, setLocations] = useState([])
+  const [locationsLoading, setLocationsLoading] = useState(true)
+  const [locationsError, setLocationsError] = useState('')
+  const [creating, setCreating] = useState(false)
+  const [createError, setCreateError] = useState('')
+  const [createSuccess, setCreateSuccess] = useState('')
+  const [officerForm, setOfficerForm] = useState({
+    username: '', email: '', password: '', constituencyId: '', wardId: '',
+  })
+
+  useEffect(() => {
+    let active = true
+    async function loadLocations() {
+      try {
+        const user = auth.currentUser
+        if (!user) throw new Error('Administrator session unavailable.')
+        const token = await user.getIdToken()
+        const response = await fetch('/api/locations', {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        const result = await response.json()
+        if (!response.ok || !result.success || !Array.isArray(result.constituencies)) {
+          throw new Error(result.message || result.error || 'Could not load county locations.')
+        }
+        if (active) setLocations(result.constituencies)
+      } catch (err) {
+        if (active) setLocationsError(err.message || 'Could not load county locations.')
+      } finally {
+        if (active) setLocationsLoading(false)
+      }
+    }
+    loadLocations()
+    return () => { active = false }
+  }, [])
+
+  const selectedConstituency = locations.find(
+    (item) => item.id === officerForm.constituencyId
+  )
+  const availableWards = selectedConstituency?.wards || []
+
+  function updateOfficerField(event) {
+    const { name, value } = event.target
+    setOfficerForm((current) => ({
+      ...current,
+      [name]: value,
+      ...(name === 'constituencyId' ? { wardId: '' } : {}),
+    }))
+    setCreateError('')
+    setCreateSuccess('')
+  }
+
+  async function createOfficer(event) {
+    event.preventDefault()
+    setCreateError('')
+    setCreateSuccess('')
+
+    if (!officerForm.username.trim() || !officerForm.email.trim()) {
+      setCreateError('Enter the officer username and email address.')
+      return
+    }
+    if (officerForm.password.length < 6) {
+      setCreateError('The password must contain at least 6 characters.')
+      return
+    }
+    if (!selectedConstituency || !officerForm.wardId) {
+      setCreateError('Select a constituency and a ward.')
+      return
+    }
+
+    setCreating(true)
+    try {
+      const user = auth.currentUser
+      if (!user) throw new Error('Administrator session unavailable.')
+      const token = await user.getIdToken()
+      const response = await fetch('/api/create-officer', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: officerForm.username.trim(),
+          email: officerForm.email.trim(),
+          password: officerForm.password,
+          constituencyId: officerForm.constituencyId,
+          wardId: officerForm.wardId,
+        }),
+      })
+      const result = await response.json()
+
+      if (!response.ok || !result.success) {
+        if (result.accountCreated) {
+          throw new Error(result.message || 'The login account was created, but its officer profile was not saved. Contact an administrator before retrying.')
+        }
+        throw new Error(result.message || result.error || 'Could not create the officer account.')
+      }
+
+      setCreateSuccess(result.message || 'Officer account created successfully.')
+      setOfficerForm({
+        username: '', email: '', password: '', constituencyId: '', wardId: '',
+      })
+      setShowCreateForm(false)
+      setReloadKey((value) => value + 1)
+    } catch (err) {
+      setCreateError(err.message || 'Unable to create the officer account.')
+    } finally {
+      setCreating(false)
+    }
+  }
+
 
   useEffect(() => {
     let active = true
@@ -830,15 +993,104 @@ function OfficersPage() {
           <h1>Officers</h1>
           <p>View registered field officers and their account activity.</p>
         </div>
-        <button
-          className="officers-refresh"
-          onClick={() => setReloadKey((value) => value + 1)}
-          disabled={loading}
-        >
-          <Clock3 size={15} />
-          Refresh
-        </button>
+        <div className="officers-heading-actions">
+          <button
+            className="officers-add"
+            onClick={() => {
+              setShowCreateForm((value) => !value)
+              setCreateError('')
+              setCreateSuccess('')
+            }}
+          >
+            <Plus size={15} />
+            {showCreateForm ? 'Close form' : 'Add officer'}
+          </button>
+          <button
+            className="officers-refresh"
+            onClick={() => setReloadKey((value) => value + 1)}
+            disabled={loading}
+          >
+            <Clock3 size={15} />
+            Refresh
+          </button>
+        </div>
       </div>
+
+      {createSuccess && (
+        <div className="officer-form-feedback officer-form-success" role="status">
+          <CircleCheck size={17} /><span>{createSuccess}</span>
+        </div>
+      )}
+
+      {showCreateForm && (
+        <form className="officer-create-form" onSubmit={createOfficer}>
+          <div className="officer-form-heading">
+            <h2>Create officer account</h2>
+            <p>Set the officer's login details and field location.</p>
+          </div>
+
+          {createError && (
+            <div className="officer-form-feedback officer-form-error" role="alert">
+              <CircleAlert size={17} /><span>{createError}</span>
+            </div>
+          )}
+          {locationsError && (
+            <div className="officer-form-feedback officer-form-error" role="alert">
+              <CircleAlert size={17} /><span>{locationsError}</span>
+            </div>
+          )}
+
+          <div className="officer-form-grid">
+            <label><span>Username</span>
+              <input name="username" value={officerForm.username}
+                onChange={updateOfficerField} placeholder="Officer name"
+                autoComplete="name" required />
+            </label>
+            <label><span>Email address</span>
+              <input name="email" type="email" value={officerForm.email}
+                onChange={updateOfficerField} placeholder="officer@example.com"
+                autoComplete="email" required />
+            </label>
+            <label><span>Temporary password</span>
+              <input name="password" type="password" value={officerForm.password}
+                onChange={updateOfficerField} placeholder="At least 6 characters"
+                autoComplete="new-password" minLength={6} required />
+            </label>
+            <label><span>Constituency</span>
+              <select name="constituencyId" value={officerForm.constituencyId}
+                onChange={updateOfficerField}
+                disabled={locationsLoading || locations.length === 0} required>
+                <option value="">{locationsLoading ? 'Loading...' : 'Select constituency'}</option>
+                {locations.map((item) => (
+                  <option key={item.id} value={item.id}>{item.name}</option>
+                ))}
+              </select>
+            </label>
+            <label><span>Ward</span>
+              <select name="wardId" value={officerForm.wardId}
+                onChange={updateOfficerField}
+                disabled={!officerForm.constituencyId || availableWards.length === 0}
+                required>
+                <option value="">Select ward</option>
+                {availableWards.map((ward) => (
+                  <option key={ward.id} value={ward.id}>{ward.name}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <div className="officer-form-actions">
+            <button type="button" className="officer-form-cancel"
+              onClick={() => { setShowCreateForm(false); setCreateError('') }}
+              disabled={creating}>Cancel</button>
+            <button type="submit" className="officers-add"
+              disabled={creating || locationsLoading || Boolean(locationsError)}>
+              <Plus size={15} />
+              {creating ? 'Creating account...' : 'Create officer'}
+            </button>
+          </div>
+        </form>
+      )}
 
       <div className="officers-summary">
         <div>
@@ -939,11 +1191,11 @@ function OfficersPage() {
 }
 
 
-function TransactionsPage() {
+function TransactionsPage({ initialSearch = "" }) {
   const [transactions, setTransactions] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [search, setSearch] = useState('')
+  const [search, setSearch] = useState(initialSearch)
   const [methodFilter, setMethodFilter] = useState('ALL')
   const [statusFilter, setStatusFilter] = useState('ALL')
   const [reloadKey, setReloadKey] = useState(0)
@@ -989,8 +1241,13 @@ function TransactionsPage() {
     const term = search.trim().toLowerCase()
     const matchesSearch = !term || [
       item.receipt,
+      item.plate,
+      item.id,
+      item.checkoutRequestId,
+      item.merchantRequestId,
       item.officerUsername,
       item.revenueType,
+      item.revenueSubType,
       item.paymentMethod,
     ].some((value) => String(value || '').toLowerCase().includes(term))
 
