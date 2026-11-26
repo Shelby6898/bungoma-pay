@@ -62,18 +62,25 @@ const callbackLimiter = rateLimit({
 app.use('/api', apiLimiter);
 app.use(express.static(path.join(__dirname, 'public'), { index: false }));
 
-// React admin dashboard
+// Shared React build with separate administrator and officer entry points.
+// Vite assets remain under /dashboard/ for compatibility.
 const dashboardDist = path.join(__dirname, 'client', 'dist');
 app.use('/dashboard', express.static(dashboardDist, { index: false, redirect: false }));
-app.get('/dashboard', (req, res, next) => {
-  if (req.path === '/dashboard') {
-    return res.redirect(301, '/dashboard/');
-  }
-  next();
-});
-app.get('/dashboard/', (req, res) => {
+
+app.get(/^\/admin$/, (req, res) => res.redirect(301, '/admin/'));
+app.get(/^\/officer$/, (req, res) => res.redirect(301, '/officer/'));
+
+app.get('/admin/', (req, res) => {
   res.sendFile(path.join(dashboardDist, 'index.html'));
 });
+
+app.get('/officer/', (req, res) => {
+  res.sendFile(path.join(dashboardDist, 'index.html'));
+});
+
+// Legacy dashboard URL now leads to the dedicated admin entry point.
+app.get('/dashboard', (req, res) => res.redirect(302, '/admin/'));
+app.get('/dashboard/', (req, res) => res.redirect(302, '/admin/'));
 // ============== FIREBASE ==============
 const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
   ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
@@ -283,7 +290,7 @@ async function getOfficerData(uid) {
 // ============== ROUTES ==============
 
 app.get('/', (req, res) => {
-  res.redirect(302, '/dashboard/');
+  res.redirect(302, '/officer/');
 });
 // Current user info
 app.get('/api/me', verifyToken, async (req, res) => {

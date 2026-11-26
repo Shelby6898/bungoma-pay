@@ -8,9 +8,10 @@ import { auth } from './firebase'
 import OfficerPortal from './OfficerPortal'
 import './AuthGate.css'
 
-function LoginScreen({ onLogin, error, busy }) {
+function LoginScreen({ portal, onLogin, error, busy }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const isAdmin = portal === 'admin'
 
   async function handleSubmit(event) {
     event.preventDefault()
@@ -29,17 +30,21 @@ function LoginScreen({ onLogin, error, busy }) {
         </div>
 
         <div className="auth-heading">
-          <span>SECURE ACCOUNT ACCESS</span>
-          <h1>Welcome back</h1>
-          <p>Sign in to access the revenue management workspace.</p>
+          <span>{isAdmin ? 'ADMINISTRATOR ACCESS' : 'OFFICER ACCESS'}</span>
+          <h1>{isAdmin ? 'Admin sign in' : 'Officer sign in'}</h1>
+          <p>
+            {isAdmin
+              ? 'Sign in to access the restricted administration workspace.'
+              : 'Sign in to access your revenue collection portal.'}
+          </p>
         </div>
 
         {error && <div className="auth-error" role="alert">{error}</div>}
 
         <form onSubmit={handleSubmit} className="auth-form">
-          <label htmlFor="admin-email">Email address</label>
+          <label htmlFor="portal-email">Email address</label>
           <input
-            id="admin-email"
+            id="portal-email"
             type="email"
             autoComplete="username"
             placeholder="Enter your email"
@@ -48,9 +53,9 @@ function LoginScreen({ onLogin, error, busy }) {
             required
           />
 
-          <label htmlFor="admin-password">Password</label>
+          <label htmlFor="portal-password">Password</label>
           <input
-            id="admin-password"
+            id="portal-password"
             type="password"
             autoComplete="current-password"
             placeholder="Enter your password"
@@ -65,7 +70,9 @@ function LoginScreen({ onLogin, error, busy }) {
         </form>
 
         <p className="auth-footnote">
-          Access is restricted to authorized Bungoma Pay accounts.
+          {isAdmin
+            ? 'Restricted to authorized administrators.'
+            : 'Use your assigned Bungoma Pay officer account.'}
         </p>
       </section>
     </main>
@@ -73,6 +80,8 @@ function LoginScreen({ onLogin, error, busy }) {
 }
 
 export default function AuthGate({ children }) {
+  const path = window.location.pathname.replace(/\/+$/, '') || '/'
+  const portal = path.startsWith('/officer') ? 'officer' : 'admin'
   const [status, setStatus] = useState('checking')
   const [profile, setProfile] = useState(null)
   const [error, setError] = useState('')
@@ -83,8 +92,6 @@ export default function AuthGate({ children }) {
 
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!active) return
-
-      setError('')
 
       if (!user) {
         setProfile(null)
@@ -97,21 +104,10 @@ export default function AuthGate({ children }) {
       try {
         const token = await user.getIdToken()
         const response = await fetch('/api/me', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         })
 
-        const responseText = await response.text()
-        let result
-
-        try {
-          result = JSON.parse(responseText)
-        } catch {
-          throw new Error(
-            `Account verification returned non-JSON (HTTP ${response.status}, ${response.headers.get('content-type') || 'unknown content type'}). Check the API response.`
-          )
-        }
+        const result = await response.json().catch(() => ({}))
 
         if (!response.ok || !result.success) {
           throw new Error(result.message || 'Could not verify your account.')
@@ -121,15 +117,23 @@ export default function AuthGate({ children }) {
 
         const account = result.user || {}
 
-        if (account.role !== 'admin' && account.role !== 'officer') {
-          throw new Error('This account does not have an authorized portal role.')
+        if (account.role !== portal) {
+          await signOut(auth)
+          if (!active) return
+          setProfile(null)
+          setError(
+            `Access denied. This account is not authorized for the ${portal} portal.`
+          )
+          setStatus('signed-out')
+          return
         }
 
+        setError('')
         setProfile(account)
-        setStatus(account.role)
+        setStatus('authorized')
       } catch (err) {
         if (!active) return
-        setError(err.message || 'Unable to verify your account with the server.')
+        setError(err.message || 'Unable to verify your account.')
         setStatus('error')
       }
     })
@@ -138,7 +142,7 @@ export default function AuthGate({ children }) {
       active = false
       unsubscribe()
     }
-  }, [])
+  }, [portal])
 
   async function handleLogin(email, password) {
     setBusy(true)
@@ -176,11 +180,11 @@ export default function AuthGate({ children }) {
     )
   }
 
-  if (status === 'admin') {
+  if (status === 'authorized' && portal === 'admin') {
     return (
       <>
         <div className="auth-session-strip">
-          <span>Signed in: {profile?.email || 'Administrator'}</span>
+          <span>Administrator: {profile?.email || 'Authorized'}</span>
           <button onClick={handleSignOut}>Sign out</button>
         </div>
         {children}
@@ -188,12 +192,13 @@ export default function AuthGate({ children }) {
     )
   }
 
-  if (status === 'officer') {
+  if (status === 'authorized' && portal === 'officer') {
     return <OfficerPortal profile={profile} />
   }
 
   return (
     <LoginScreen
+      portal={portal}
       onLogin={handleLogin}
       error={error}
       busy={busy}
