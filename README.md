@@ -1,7 +1,7 @@
 # 💳 Bungoma Pay — Digital Revenue Collection Platform
 
-> **Live System:** https://pay.icthelpdesk.site
-> **Version:** 3.0 | **Status:** Production Ready | **County:** Bungoma County Government
+> **Live System:** https://bungoma-pay.onrender.com
+> **Version:** 3.0 | **Status:** Active Development | **County:** Bungoma County
 
 ---
 
@@ -15,10 +15,12 @@ Field revenue officers collect payments directly from taxpayers using M-PESA STK
 
 ## 🚀 Live URLs
 
-- Login: https://pay.icthelpdesk.site
-- Officer Dashboard: https://pay.icthelpdesk.site/index.html
-- Admin Dashboard: https://pay.icthelpdesk.site/admin.html
-- M-PESA Callback: https://pay.icthelpdesk.site/api/callback
+- Main Application: https://bungoma-pay.onrender.com
+- Officer Portal: https://bungoma-pay.onrender.com/officer/
+- Administrator Portal: https://bungoma-pay.onrender.com/admin/
+- M-PESA Callback: https://bungoma-pay.onrender.com/api/callback
+
+The root URL redirects to the officer portal. Both portals use the shared React frontend.
 
 ---
 
@@ -44,66 +46,166 @@ Field revenue officers collect payments directly from taxpayers using M-PESA STK
 - Firebase Authentication (email/password)
 - Role-based access control — officers see only their own data
 - Firestore Security Rules — field-level data isolation
-- JWT token verification on every API endpoint
+- Firebase ID token verification on authenticated API endpoints
 - Payment idempotency — prevents duplicate STK charges (60-second window)
-- HTTPS via Cloudflare Tunnel with TLS termination
+- HTTPS provided by Render with managed TLS termination
 
 ---
 
-## 🏗️ Tech Stack
+## 🏗️ Technology Stack
 
-- Frontend: HTML5, CSS3, Vanilla JavaScript
-- Backend: Node.js + Express.js
-- Database: Firebase Firestore (Real-time)
-- Authentication: Firebase Authentication
-- Payments: Safaricom Daraja API (M-PESA STK Push)
-- SMS: Africa's Talking API
-- Process Manager: PM2
-- Tunnel: Cloudflare Named Tunnel
-- Domain: pay.icthelpdesk.site
+| Layer | Technologies |
+|---|---|
+| Frontend | React 19, Vite 8 |
+| Routing | React Router 7 |
+| UI and icons | CSS3, Lucide React |
+| Frontend Firebase SDK | Firebase JavaScript SDK |
+| Backend runtime | Node.js |
+| Backend framework | Express 5 |
+| Backend Firebase SDK | Firebase Admin SDK 14 |
+| Database | Cloud Firestore |
+| Authentication | Firebase Authentication |
+| Payments | Safaricom Daraja API (M-PESA) |
+| SMS | Africa's Talking |
+| HTTP client | Axios |
+| Security | Helmet, Express Rate Limit, bcryptjs |
+| Testing | Node.js built-in test runner |
+| Code quality | ESLint |
+| Deployment | Render |
+| Version control | Git and GitHub |
 
----
+### Programming Languages
+
+- **JavaScript** — primary language; CommonJS on the backend and ES modules on the frontend
+- **CSS3** — interface styling
+- **HTML5** — frontend document structure
+- **JSON** — configuration and data exchange
 
 ## 📁 Project Structure
----
+
+```text
+bungoma-pay/
+├── client/
+│   ├── src/
+│   │   ├── assets/
+│   │   ├── App.jsx
+│   │   ├── AuthGate.jsx
+│   │   ├── OfficerPortal.jsx
+│   │   ├── firebase.js
+│   │   ├── firestore.js
+│   │   ├── App.css
+│   │   ├── AuthGate.css
+│   │   ├── OfficerPortal.css
+│   │   └── index.css
+│   ├── index.html
+│   ├── package.json
+│   └── vite.config.js
+├── public/
+│   ├── login.html
+│   ├── admin.html
+│   └── index.html
+├── scripts/
+├── test/
+├── server.js
+├── mpesa-callback-processor.js
+├── mpesa-callback-recovery.js
+├── mpesa-payment-intents.js
+├── mpesa-reconciliation-handler.js
+├── mpesa-reconciliation-result.js
+├── analytics-aggregates.js
+├── admin-stats-handler.js
+├── broadcast-response.js
+├── location-data.js
+├── firebase.json
+├── firestore.rules
+├── firestore.indexes.json
+├── package.json
+└── README.md
+```
+
+The client/ directory contains the React application. The root-level Express server serves the built frontend and provides the backend API.
 
 ## ⚙️ Environment Variables
+
+Configure backend variables in Render for production.
+For local development, use a private `.env` file.
+
+### Backend
 
 ```env
 CONSUMER_KEY=your_mpesa_consumer_key
 CONSUMER_SECRET=your_mpesa_consumer_secret
 PASSKEY=your_mpesa_passkey
 SHORTCODE=your_mpesa_shortcode
-CALLBACK_URL=https://pay.icthelpdesk.site/api/callback
+CALLBACK_URL=https://bungoma-pay.onrender.com/api/callback
 AT_API_KEY=your_africastalking_api_key
 AT_USERNAME=your_africastalking_username
+FIREBASE_SERVICE_ACCOUNT=your_service_account_json
 PORT=3000
 ```
 
----
+Firebase Admin uses FIREBASE_SERVICE_ACCOUNT or a local
+`firebase-key.json` service-account file. Never commit credentials.
+Render provides the production service port.
 
+### Frontend
+
+Set these Vite variables when building the React application.
+Use `client/.env` locally and deployment settings in production.
+
+```env
+VITE_FIREBASE_API_KEY=your_firebase_api_key
+VITE_FIREBASE_APP_ID=your_firebase_app_id
+VITE_FIREBASE_AUTH_DOMAIN=your_firebase_auth_domain
+VITE_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id
+VITE_FIREBASE_PROJECT_ID=your_firebase_project_id
+VITE_FIREBASE_STORAGE_BUCKET=your_firebase_storage_bucket
+```
+
+### Local Firebase Emulator (Optional)
+
+```env
+FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099
+FIRESTORE_EMULATOR_HOST=127.0.0.1:8080
+```
+
+Use emulator settings only for local emulator testing.
+Do not configure emulator hosts in production.
+
+---
 ## 🔌 API Endpoints
 
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | / | None | Serves login page |
-| GET | /api/me | User | Get current user profile |
-| POST | /api/pay | User | Initiate M-PESA STK Push |
-| POST | /api/callback | None | M-PESA payment callback |
-| POST | /api/cash | User | Record cash payment |
-| GET | /api/transactions | User | Get transactions (role-scoped) |
-| GET | /api/admin/stats | Admin | Revenue statistics |
-| POST | /api/create-officer | Admin | Create officer account |
-| GET | /api/officers | Admin | List all officers |
-| POST | /api/report | Admin | Generate revenue report |
-| POST | /api/broadcast | Admin | Send broadcast to officers |
-| POST | /api/broadcast/:id/read | User | Mark broadcast as read |
-| POST | /api/profile/update | User | Update profile |
-| POST | /api/sync-offline | User | Sync offline transactions |
-| POST | /api/heartbeat | User | Update officer online status |
+The root URL redirects to `/officer/`. The React portals are served at
+`/officer/` and `/admin/`.
+
+| Method | Endpoint | Access | Description |
+|---|---|---|---|
+| GET | `/api/me` | Authenticated | Get current user profile |
+| POST | `/api/heartbeat` | Authenticated | Update officer presence |
+| POST | `/api/offline` | Authenticated | Update offline status |
+| POST | `/api/pay` | Officer | Initiate M-PESA STK Push |
+| POST | `/api/callback` | M-PESA callback | Receive payment result |
+| POST | `/api/cash` | Officer | Record cash payment |
+| GET | `/api/transactions` | Authenticated | Get role-scoped transactions |
+| GET | `/api/admin/mpesa/pending` | Admin | List pending M-PESA payments |
+| POST | `/api/admin/mpesa/reconcile` | Admin | Reconcile a pending payment |
+| GET | `/api/admin/stats` | Admin | Retrieve dashboard statistics |
+| GET | `/api/admin/revenue-trend` | Admin | Retrieve revenue trend |
+| GET | `/api/locations` | Admin | List supported locations |
+| POST | `/api/create-officer` | Admin | Create an officer account |
+| GET | `/api/admin/officer-activity` | Admin | Retrieve officer activity |
+| GET | `/api/officers` | Admin | List officers |
+| PUT | `/api/officers/:uid/location` | Admin | Update officer location |
+| POST | `/api/report` | Admin | Generate revenue report |
+| POST | `/api/broadcast` | Admin | Send a broadcast |
+| GET | `/api/broadcasts` | Officer | Retrieve broadcasts |
+| POST | `/api/broadcast/:id/read` | Officer | Mark a broadcast as read |
+| POST | `/api/profile/update` | Authenticated | Update user profile |
+| POST | `/api/sync-offline` | Officer | Synchronize offline transactions |
+
+All authenticated endpoints require a valid Firebase ID token.
 
 ---
-
 ## 🗄️ Firestore Data Model
 
 ### users/{uid}
@@ -158,49 +260,79 @@ PORT=3000
 
 ---
 
-## 🛠️ Installation
+## 🛠️ Installation and Deployment
+
+### Prerequisites
+
+- Node.js and npm
+- A Firebase project with Authentication and Cloud Firestore
+- Firebase configuration and service-account credentials
+- Safaricom Daraja credentials for M-PESA integration
+- Africa's Talking credentials if SMS notifications are enabled
+
+### Local Setup
 
 ```bash
-# 1. Clone the repository
 git clone https://github.com/Shelby6898/bungoma-pay.git
 cd bungoma-pay
-
-# 2. Install dependencies
-npm install express axios cors moment africastalking firebase-admin dotenv
-
-# 3. Add Firebase service account
-# Download firebase-key.json from Firebase Console
-# Place in root directory
-
-# 4. Create .env file
-cp .env.example .env
-
-# 5. Start server
-node server.js
-
-# 6. Production with PM2
-npm install -g pm2
-pm2 start server.js --name bungoma-pay
-pm2 save
+npm install
+npm --prefix client install
 ```
 
----
+Configure the backend `.env` and frontend `client/.env` files using
+the variable names documented above. Never commit either file.
 
-## 📊 PM2 Commands
+For local testing, use Firebase emulators and M-PESA sandbox credentials.
+Do not connect local development to production payment or database resources.
+
+### Build and Quality Checks
 
 ```bash
-pm2 list                              # View all processes
-pm2 logs bungoma-pay                  # Live logs
-pm2 restart bungoma-pay --update-env  # Restart after .env changes
-pm2 stop bungoma-pay                  # Stop server
-pm2 flush bungoma-pay                 # Clear logs
+npm --prefix client run build
+npm --prefix client run lint
+npm test
 ```
+
+### Run the Application
+
+After configuring a safe local Firebase test environment:
+
+```bash
+npm start
+```
+
+The Express server serves the built React portals and backend API.
+
+### Render Deployment
+
+The production application is hosted on Render.
+
+- Build command: `npm install && npm --prefix client install && npm --prefix client run build`
+- Start command: `npm start`
+- Configure production environment variables in the Render dashboard.
+- Set `CALLBACK_URL` to the deployed `/api/callback` URL.
+
+Keep Firebase service-account credentials and payment provider secrets
+in Render environment settings. Never commit secrets to the repository.
 
 ---
 
 ## 🗺️ Supported Wards
 
-Kanduyi | Kimilili | Webuye East | Webuye West | Tongaren | Sirisia | Mt. Elgon | Bumula | Township
+The application uses nine constituencies and 45 wards, based on the
+backend reference data in `location-data.js`.
+
+| Constituency | Wards |
+|---|---|
+| Kanduyi | Bukembe West, Bukembe East, Township, Khalaba, Musikoma, East Sang’alo, West Sang’alo, Tuuti/Marakaru |
+| Bumula | South Bukusu, Bumula, Khasoko, Kabula, Kimaeti, West Bukusu, Siboti |
+| Webuye East | Mihuu, Ndivisi, Maraka |
+| Webuye West | Sitikho, Matulo, Bokoli, Misikhu |
+| Kabuchai | Kabuchai/Chwele, West Nalondo, Bwake/Luuya, Mukuyuni |
+| Sirisia | Namwela, Malakisi/South Kulisiru, Lwandanyi |
+| Tongaren | Mbakalo, Naitiri/Kabuyefwe, Milima, Ndalu, Tongaren, Soysambu/Mitua |
+| Kimilili | Kibingei, Kimilili, Maeni, Kamukuywa |
+| Mt Elgon | Cheptais, Chesikaki, Chepyuk, Kapkateny, Kaptama, Elgon |
 
 ---
 
@@ -227,7 +359,7 @@ Kanduyi | Kimilili | Webuye East | Webuye West | Tongaren | Sirisia | Mt. Elgon 
 **Elphas Shelby**
 🎓 Kaimosi Friends University
 📧 elphazshelby@gmail.com
-🌐 https://pay.icthelpdesk.site
+🌐 https://bungoma-pay.onrender.com
 💻 https://github.com/Shelby6898
 
 ---
