@@ -7,7 +7,7 @@
 
 ## 📋 Overview
 
-Bungoma Pay is a mobile-first, real-time digital revenue collection and management platform built for Bungoma County Government. It replaces manual cash-based revenue collection with a secure, transparent, and accountable digital system integrated with M-PESA (Safaricom Daraja API) and Firebase.
+Bungoma Pay is a mobile, real-time digital revenue collection and management platform built for Bungoma County Government. It replaces manual cash-based revenue collection with a secure, transparent, and accountable digital system integrated with M-PESA (Safaricom Daraja API) and Firebase.
 
 Field revenue officers collect payments directly from taxpayers using M-PESA STK Push or cash, while administrators monitor all collections in real time from a centralized dashboard by officer, ward, revenue type, and date.
 
